@@ -1,3 +1,9 @@
+## v41.3 - Print Engine + CamScanner Options
+- Fixed Aadhaar/PVC card exact A4 print output at 85.6 x 54 mm.
+- Added CamScanner-style filters: Auto Enhance, Magic Color, Grayscale, Black & White, Original.
+- Added brightness, contrast, sharpness, rotate, auto crop, top margin and gap controls.
+- Print/Download now generates print-safe PDF; use A4 + Actual size / 100%.
+
 # Smart Photo Toolkit v41.2 Actual Patch
 
 - Added real Document Studio override on current source base.

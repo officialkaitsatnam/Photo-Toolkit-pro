@@ -1,3 +1,3 @@
-# Smart Photo Toolkit Pro v41.2 Actual Source Patch
+# Smart Photo Toolkit Pro v41.3
 
-This build is based on the uploaded v40.5 source and patches Document Studio and Passport Studio through real CSS/JS overrides.
+Actual source patch based on v41.2. Adds Document Studio Print Engine fixes and CamScanner-style scan options.
