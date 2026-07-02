@@ -824,7 +824,7 @@ async function safePdfResize(){const f=document.getElementById('pdfToolFile').fi
 })();
 
 /* =========================================================
-   Smart Photo Toolkit Pro v41.3
+   Smart Photo Toolkit Pro v41.4
    Document Studio Print Engine + CamScanner-style controls
    - Aadhaar/PAN/Voter/DL exact 85.6 x 54 mm output
    - A4 PDF print-safe layout (no browser CSS scaling)
@@ -847,7 +847,7 @@ async function safePdfResize(){const f=document.getElementById('pdfToolFile').fi
   function docCards(){return Object.entries(DOCS).map(([k,d])=>`<button class="spt413-doc ${ST.doc===k?'active':''}" onclick="spt413Open('${k}')"><img src="${d.icon}" onerror="this.style.display='none'"><b>${d.name}</b><small>85.6 × 54 mm</small></button>`).join('')}
   window.documentStudio=function(){
     if(typeof window.v40EnsureAuth==='function' && !window.v40EnsureAuth('documentStudio')) return;
-    workspace.innerHTML=header('Document Studio v41.3','Aadhaar/PVC card exact print engine with CamScanner-style scan enhancement.')+`<div class="card"><div class="spt413-head"><div><h3>1. Select Document</h3><p>Choose document, upload image/PDF, crop, enhance and print exact A4 PDF.</p></div><button onclick="spt413Help()">How to use</button></div><div class="spt413-doc-grid">${docCards()}</div><div class="spt413-note">New: Aadhaar print size fixed. Final PDF uses exact 85.6 × 54 mm cards on A4, so print dialog should stay at 100% / Actual size.</div></div>`;
+    workspace.innerHTML=header('Document Studio v41.4','Aadhaar/PVC card exact print engine with CamScanner-style scan enhancement.')+`<div class="card"><div class="spt413-head"><div><h3>1. Select Document</h3><p>Choose document, upload image/PDF, crop, enhance and print exact A4 PDF.</p></div><button onclick="spt413Help()">How to use</button></div><div class="spt413-doc-grid">${docCards()}</div><div class="spt413-note">New: Aadhaar print size fixed. Final PDF uses exact 85.6 × 54 mm cards on A4, so print dialog should stay at 100% / Actual size.</div></div>`;
   };
   window.spt413Help=()=>toast('Upload front/back → Auto Crop → choose Scan Filter → Preview → Download/Print PDF. In printer dialog use A4 + Actual size / 100%.');
   window.spt413Open=function(id){ST.doc=id; ST.frontCrop=ST.backCrop=ST.pdfCrop=null; render();};
@@ -882,7 +882,17 @@ async function safePdfResize(){const f=document.getElementById('pdfToolFile').fi
   async function collect(){let a=[]; if(ST.tab==='image'){if(ST.mode!=='back')a.push(await cropCard(ST.frontCrop)); if(ST.mode!=='front')a.push(await cropCard(ST.backCrop));} else a.push(await cropCard(ST.pdfCrop)); return a.filter(Boolean)}
   window.preview=async function(){const box=$('#spt413A4'); if(!box)return; const imgs=await collect(); box.innerHTML=imgs.map(s=>`<img src="${s}">`).join('')};
   async function makePdf(){const imgs=await collect(); if(!imgs.length){toast('Upload and crop document first');return null} const {jsPDF}=window.jspdf; const pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'}); const cw=85.6,ch=54,g=Number(ST.gap)||2.4,top=Number(ST.top)||2.2; let y=top; for(let c=0;c<Number(ST.copies||1);c++){ if(ST.layout==='stack' || imgs.length===1){for(const src of imgs){let x=(210-cw)/2; pdf.addImage(src,'JPEG',x,y,cw,ch); pdf.setDrawColor(20);pdf.setLineWidth(.18);pdf.rect(x,y,cw,ch); y+=ch+g; if(y+ch>294){pdf.addPage();y=top}}} else {const total=imgs.length*cw+(imgs.length-1)*g; let x=(210-total)/2; for(const src of imgs){pdf.addImage(src,'JPEG',x,y,cw,ch); pdf.setDrawColor(20);pdf.setLineWidth(.18);pdf.rect(x,y,cw,ch); x+=cw+g} y+=ch+g; if(y+ch>294 && c<Number(ST.copies)-1){pdf.addPage();y=top}} } return pdf}
-  window.downloadDoc=async()=>{const pdf=await makePdf(); if(pdf)pdf.save((DOCS[ST.doc]?.name||'document').replaceAll(' ','-')+'-exact-a4-v41.3.pdf')};
+  window.downloadDoc=async()=>{const pdf=await makePdf(); if(pdf)pdf.save((DOCS[ST.doc]?.name||'document').replaceAll(' ','-')+'-exact-a4-v41.4.pdf')};
   window.printDoc=async()=>{const pdf=await makePdf(); if(!pdf)return; pdf.autoPrint(); window.open(URL.createObjectURL(pdf.output('blob')),'_blank')};
   const oldShow=window.showTool; window.showTool=function(tool){ if(tool==='documentStudio')return window.documentStudio(); return oldShow?oldShow(tool):null; };
+})();
+
+
+/* v41.4 boot marker and cache-safe global aliases */
+(function(){
+  window.SPT_ACTIVE_VERSION = 'v41.4';
+  window.sptVersion = 'v41.4 Print Engine + CamScanner';
+  document.addEventListener('DOMContentLoaded', function(){
+    try{ document.body.setAttribute('data-spt-version','v41.4'); }catch(e){}
+  });
 })();
