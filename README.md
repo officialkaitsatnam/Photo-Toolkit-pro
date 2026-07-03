@@ -24,3 +24,10 @@ Clicking any document opens a large workspace with PDF/image upload, page select
 
 ## Files to upload to GitHub
 Upload all files from this ZIP into your repository root.
+
+
+## v41.9 PDF Selection Fix
+- PDF Upload mode now creates only one printable preview card.
+- Front/Back preview is shown only when front/back images are uploaded in Image Upload mode.
+- Removed Set Front / Set Back buttons from official PDF workspace to avoid duplicate front/back output.
+- PDF crop stage now supports real zoom with scrollable large preview for easier selection.

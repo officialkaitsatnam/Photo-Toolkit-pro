@@ -19,3 +19,10 @@
 - Existing source structure.
 - Existing images/icons and offline files.
 - Previous Aadhaar Build-1A functionality is kept but overridden by the universal v41.8 engine.
+
+
+## v41.9 PDF Selection Fix
+- PDF Upload mode now creates only one printable preview card.
+- Front/Back preview is shown only when front/back images are uploaded in Image Upload mode.
+- Removed Set Front / Set Back buttons from official PDF workspace to avoid duplicate front/back output.
+- PDF crop stage now supports real zoom with scrollable large preview for easier selection.
