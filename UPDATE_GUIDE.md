@@ -1,12 +1,10 @@
-# Update Guide - v42.0
+# Update Guide v42.1
 
-1. Extract this ZIP.
-2. Open your GitHub repository folder in GitHub Desktop.
-3. Copy all extracted files into the repository folder.
-4. Replace old files when asked.
-5. Commit message: `v42.0 Document Studio Pro A4 Crop Fix`
-6. Push to GitHub.
-7. Open your GitHub Pages site and hard refresh.
+1. Download ZIP.
+2. Extract ZIP.
+3. Upload all extracted files to GitHub repository root.
+4. Make sure these files are in root: `index.html`, `main.css`, `main.js`, `manifest.webmanifest`, `icon-192.png`.
+5. Wait for GitHub Pages deployment.
+6. Open site in incognito/private window or clear cache.
 
-## Important
-In browser print dialog, choose **Actual Size / 100%**. The app downloads/prints a real A4 PDF with the selected crop area centered at 2.2 mm top margin.
+If latest deployment fails with only `Deployment failed, try again later`, rerun GitHub Actions job.
