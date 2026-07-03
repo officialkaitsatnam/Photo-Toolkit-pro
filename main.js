@@ -877,3 +877,61 @@ async function safePdfResize(){const f=document.getElementById('pdfToolFile').fi
   const oldShow=window.showTool; window.showTool=function(tool){if(tool==='documentStudio')return documentStudio(); if(tool==='passport')return passportStudio(); return oldShow?oldShow(tool):null};
   window.addEventListener('load',()=>{document.title='Smart Photo Toolkit Pro '+VERSION; document.querySelectorAll('.footer-copy').forEach(e=>e.textContent='© 2026 Smart Photo Toolkit Pro · '+VERSION+' Enterprise'); if(window.SPT_CONFIG)window.SPT_CONFIG.version=VERSION; if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations&&navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.update()))}});
 })();
+
+
+/* =====================================================
+   Smart Photo Toolkit Pro v41.6 Build-1A
+   Aadhaar Printable Engine — PDF Upload + 8 Handle Crop
+   ===================================================== */
+(function(){
+  const VERSION='v41.6-Build-1A';
+  const CARD_W_MM=85.6, CARD_H_MM=54, TOP_MM=2.2, GAP_MM=2.4;
+  const RATIO=CARD_W_MM/CARD_H_MM;
+  const S={pdfDoc:null,pdfPages:0,page:1,scale:1.35,crop:null,front:null,back:null,lastPdfName:'aadhaar-official.pdf'};
+  const $=s=>document.querySelector(s);
+  const ws=()=>document.getElementById('workspace');
+  function toast(m){const t=document.getElementById('toast'); if(t){t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}else alert(m)}
+  function header(t,sub){return `<div class="page-head"><div><h1>${t}</h1><p>${sub||''}</p></div><span class="pro-badge">${VERSION}</span></div>`}
+  function waitFrame(){return new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))}
+  function visible(stage,media){const sr=stage.getBoundingClientRect(), mr=media.getBoundingClientRect(); return {x:mr.left-sr.left,y:mr.top-sr.top,w:mr.width,h:mr.height}}
+  function clamp(c,x=c.x,y=c.y,w=c.w,h=c.h){const b=visible(c.stage,c.media); if(w/h>RATIO) w=h*RATIO; else h=w/RATIO; w=Math.max(70,Math.min(w,b.w)); h=Math.max(44,Math.min(h,b.h)); if(w/h>RATIO) w=h*RATIO; else h=w/RATIO; x=Math.max(b.x,Math.min(x,b.x+b.w-w)); y=Math.max(b.y,Math.min(y,b.y+b.h-h)); return {x,y,w,h}}
+  function paint(c){Object.assign(c,clamp(c)); Object.assign(c.box.style,{left:c.x+'px',top:c.y+'px',width:c.w+'px',height:c.h+'px'})}
+  function createCrop(stage,media){ if(!stage||!media)return null; stage.querySelectorAll('.b1a-crop').forEach(e=>e.remove()); const b=visible(stage,media); let w=b.w*.88,h=w/RATIO; if(h>b.h*.82){h=b.h*.82;w=h*RATIO} const c={stage,media,x:b.x+(b.w-w)/2,y:b.y+(b.h-h)/2,w,h}; const box=document.createElement('div'); box.className='b1a-crop'; ['nw','n','ne','e','se','s','sw','w'].forEach(n=>{const h=document.createElement('span');h.className='b1a-h '+n;h.dataset.h=n;box.appendChild(h)}); const mv=document.createElement('i'); mv.className='b1a-move'; mv.textContent='DRAG'; box.appendChild(mv); c.box=box; stage.appendChild(box); attach(c); paint(c); return c}
+  function attach(c){let mode='',start={}; const pos=e=>e.touches?{x:e.touches[0].clientX,y:e.touches[0].clientY}:{x:e.clientX,y:e.clientY}; const down=e=>{e.preventDefault();e.stopPropagation(); const p=pos(e); mode=e.target.dataset.h||'move'; start={px:p.x,py:p.y,x:c.x,y:c.y,w:c.w,h:c.h}; document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); document.addEventListener('touchmove',move,{passive:false}); document.addEventListener('touchend',up)}; const move=e=>{e.preventDefault(); const p=pos(e),dx=p.x-start.px,dy=p.y-start.py; let {x,y,w,h}=start; if(mode==='move'){x+=dx;y+=dy}else{if(mode.includes('e'))w+=dx;if(mode.includes('s'))h+=dy;if(mode.includes('w')){x+=dx;w-=dx}if(mode.includes('n')){y+=dy;h-=dy}} Object.assign(c,clamp(c,x,y,w,h)); paint(c)}; const up=()=>{document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);document.removeEventListener('touchmove',move);document.removeEventListener('touchend',up)}; c.box.addEventListener('mousedown',down); c.box.addEventListener('touchstart',down,{passive:false})}
+  async function renderPdf(){const canvas=$('#b1aPdfCanvas'); if(!canvas||!S.pdfDoc)return; const page=await S.pdfDoc.getPage(S.page); const vp=page.getViewport({scale:S.scale}); canvas.width=vp.width; canvas.height=vp.height; await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise; await waitFrame(); S.crop=createCrop($('#b1aPdfStage'),canvas)}
+  async function cropData(){ if(!S.crop){toast('Crop area select karo');return null} const c=S.crop, media=c.media, mr=media.getBoundingClientRect(), sr=c.stage.getBoundingClientRect(); let rx=(c.x-(mr.left-sr.left))/mr.width, ry=(c.y-(mr.top-sr.top))/mr.height, rw=c.w/mr.width, rh=c.h/mr.height; rx=Math.max(0,Math.min(rx,1)); ry=Math.max(0,Math.min(ry,1)); rw=Math.max(.01,Math.min(rw,1-rx)); rh=Math.max(.01,Math.min(rh,1-ry)); const out=document.createElement('canvas'),ctx=out.getContext('2d'); out.width=1600; out.height=Math.round(out.width/RATIO); ctx.fillStyle='#fff'; ctx.fillRect(0,0,out.width,out.height); ctx.drawImage(media,media.width*rx,media.height*ry,media.width*rw,media.height*rh,0,0,out.width,out.height); return out.toDataURL('image/jpeg',.96)}
+  function cards(){return [S.front,S.back].filter(Boolean)}
+  function livePreview(){const box=$('#b1aPreviewStrip'); if(!box)return; const imgs=cards(); box.innerHTML=imgs.length?imgs.map((src,i)=>`<div class="b1a-card-wrap"><img src="${src}"><small>${i===0?'FRONT':'BACK'}</small></div>`).join(''):`<div class="b1a-empty-preview">Crop karke “Set as Front” ya “Set as Back” dabao</div>`; $('#b1aStatus')&&($('#b1aStatus').textContent=`${imgs.length}/2 side ready`)}
+  async function makePdf(){const imgs=cards(); if(!imgs.length){toast('Pehle Aadhaar crop set karo');return null} const {jsPDF}=window.jspdf; const pdf=new jsPDF({unit:'mm',format:'a4'}); const total=imgs.length*CARD_W_MM+(imgs.length-1)*GAP_MM; let x=(210-total)/2, y=TOP_MM; pdf.setFontSize(7); pdf.setTextColor(90); pdf.text('Aadhaar Printable Build-1A · Print at Actual Size / 100%',105,292,{align:'center'}); imgs.forEach((src,i)=>{pdf.addImage(src,'JPEG',x,y,CARD_W_MM,CARD_H_MM); pdf.setDrawColor(0); pdf.setLineWidth(.25); pdf.rect(x,y,CARD_W_MM,CARD_H_MM); pdf.setDrawColor(120); pdf.setLineDashPattern([1.2,1.2],0); pdf.line(x+CARD_W_MM/2,y,x+CARD_W_MM/2,y+CARD_H_MM); pdf.setLineDashPattern([],0); pdf.setFontSize(6); pdf.setTextColor(80); pdf.text(i===0?'FRONT':'BACK',x+CARD_W_MM/2,y+CARD_H_MM+2.5,{align:'center'}); x+=CARD_W_MM+GAP_MM}); if(imgs.length===2){const mid=105; pdf.setDrawColor(30); pdf.setLineDashPattern([2,2],0); pdf.line(mid,TOP_MM+CARD_H_MM+6,mid,TOP_MM+CARD_H_MM+20); pdf.setLineDashPattern([],0); pdf.setFontSize(7); pdf.text('Fold / Lamination center guide',105,TOP_MM+CARD_H_MM+24,{align:'center'})} return pdf}
+  function render(){ws().innerHTML=header('Build-1A: Aadhaar Printable','Official Aadhaar PDF upload → page select → 8-point crop → live print preview → PDF/Print')+`
+    <div class="b1a-shell">
+      <section class="card b1a-left">
+        <div class="b1a-step"><b>1. Official Aadhaar PDF Upload</b><span id="b1aStatus">${cards().length}/2 side ready</span></div>
+        <label class="b1a-drop"><input hidden type="file" accept="application/pdf" onchange="b1aLoadPdf(event)">${S.pdfDoc?`PDF loaded · ${S.pdfPages} page(s)`:'Upload Aadhaar PDF'}</label>
+        ${S.pdfDoc?`<div class="b1a-tools"><label>Page <select onchange="b1aPage(this.value)">${Array.from({length:S.pdfPages},(_,i)=>`<option value="${i+1}" ${S.page===i+1?'selected':''}>${i+1}</option>`).join('')}</select></label><button onclick="b1aZoom(1.2)">Zoom +</button><button onclick="b1aZoom(.84)">Zoom -</button><button onclick="b1aFit()">Fit</button><button onclick="b1aResetCrop()">Reset Crop</button></div>`:''}
+        <div class="b1a-stage ${S.pdfDoc?'':'empty'}" id="b1aPdfStage">${S.pdfDoc?'<canvas id="b1aPdfCanvas"></canvas>':'Upload PDF to preview selected page'}</div>
+        <div class="b1a-tools b1a-main-actions"><button class="b1a-primary" onclick="b1aSetSide('front')">Set as Front</button><button class="b1a-primary" onclick="b1aSetSide('back')">Set as Back</button><button onclick="b1aClearSides()">Clear Front/Back</button></div>
+      </section>
+      <aside class="card b1a-right">
+        <h3>Live Print Preview</h3>
+        <div class="b1a-a4"><div class="b1a-preview-strip" id="b1aPreviewStrip"></div></div>
+        <div class="b1a-spec"><div><span>Aadhaar Size</span><b>85.6 × 54 mm</b></div><div><span>Top Margin</span><b>2.2 mm</b></div><div><span>Alignment</span><b>Center</b></div><div><span>Layout</span><b>Fold + Lamination</b></div></div>
+        <div class="b1a-tools"><button class="b1a-green" onclick="b1aDownload()">Download PDF</button><button onclick="b1aPrint()">Print</button></div>
+        <p class="b1a-note">Print dialog me Scale: <b>Actual Size / 100%</b> rakhein.</p>
+      </aside>
+    </div>`; livePreview(); if(S.pdfDoc)setTimeout(renderPdf,120)}
+  window.aadhaarPrintable=render;
+  window.documentStudio=render;
+  window.b1aLoadPdf=async e=>{const f=e.target.files[0]; if(!f)return; if(!window.pdfjsLib){toast('PDF library load nahi hui. Refresh karke try karo.');return} S.lastPdfName=f.name||S.lastPdfName; S.pdfDoc=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise; S.pdfPages=S.pdfDoc.numPages; S.page=1; S.crop=null; render(); setTimeout(renderPdf,180)};
+  window.b1aPage=v=>{S.page=Number(v); S.crop=null; render(); setTimeout(renderPdf,120)};
+  window.b1aZoom=f=>{S.scale=Math.max(.55,Math.min(4,S.scale*f)); renderPdf()};
+  window.b1aFit=()=>{S.scale=1.35; renderPdf()};
+  window.b1aResetCrop=()=>{S.crop=null; renderPdf(); toast('Crop reset ho gaya')};
+  window.b1aSetSide=async side=>{const data=await cropData(); if(!data)return; S[side]=data; livePreview(); toast(side==='front'?'Front ready':'Back ready')};
+  window.b1aClearSides=()=>{S.front=null;S.back=null;livePreview();toast('Front/Back cleared')};
+  window.b1aDownload=async()=>{const pdf=await makePdf(); if(pdf)pdf.save('Aadhaar-Printable-Build-1A.pdf')};
+  window.b1aPrint=async()=>{const pdf=await makePdf(); if(!pdf)return; pdf.autoPrint(); window.open(URL.createObjectURL(pdf.output('blob')),'_blank')};
+  const oldShow=window.showTool;
+  window.showTool=function(tool){if(tool==='documentStudio'||tool==='aadhaarPrintable')return render(); return oldShow?oldShow(tool):null};
+  window.addEventListener('load',()=>{document.title='Smart Photo Toolkit Pro '+VERSION; if(window.SPT_CONFIG)window.SPT_CONFIG.version=VERSION; document.querySelectorAll('.footer-copy').forEach(e=>e.textContent='© 2026 Smart Photo Toolkit Pro · '+VERSION+' Enterprise')});
+})();
