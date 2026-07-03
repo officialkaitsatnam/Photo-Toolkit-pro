@@ -1,32 +1,26 @@
-# Smart Photo Toolkit Pro v41.7
+# Smart Photo Toolkit Pro v41.8
 
-GitHub-ready source package for **Smart Photo Toolkit Pro v41.7 Figma UI + Build-1A Aadhaar Printable**.
+GitHub-ready source package.
 
-## Included
-- Aadhaar PDF Upload Engine
-- Page Select + PDF Preview
-- 8-point Crop Tool
-- Drag + Resize Handles
-- Zoom / Fit / Reset
-- Aadhaar size: 85.6 × 54 mm
-- 2.2 mm top margin
-- Front + Back layout
-- Fold + Lamination guide
-- Live Print Preview
-- Print + Download PDF
-- Figma design link note
-- GitHub Desktop upload guide
+## Main Update
+Document Studio has been upgraded into a professional tools dashboard. On clicking **Document Studio**, the app now shows 6 document boxes:
 
-## Main files
-- `index.html`
-- `main.css`
-- `main.js`
-- `script.js`
-- `manifest.webmanifest`
-- `sw.js`
+1. Aadhaar Card
+2. PAN Card
+3. Voter ID
+4. Driving Licence
+5. ABHA Card
+6. Ayushman Card
 
-## Figma
-See `FIGMA_DESIGN_LINK.md`.
+Clicking any document opens a large workspace with PDF/image upload, page select, zoom, 8-handle crop, live A4 preview, download PDF and print.
 
-## GitHub Desktop
-See `GITHUB_DESKTOP_UPLOAD_GUIDE.md`.
+## Print Specs
+- Card size: 85.6 × 54 mm
+- A4 page: 210 × 297 mm
+- Top margin: 2.2 mm
+- Alignment: top center
+- Front/back gap: 2.4 mm
+- Print scale: Actual Size / 100%
+
+## Files to upload to GitHub
+Upload all files from this ZIP into your repository root.
