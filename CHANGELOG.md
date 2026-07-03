@@ -1,28 +1,20 @@
 # Changelog
 
-## v41.8 Document Studio Tools Dashboard
+## v42.0 - Document Studio Pro A4 Crop Fix
+
+### Fixed
+- Official PDF upload now creates **single printable output only**.
+- Front + Back preview appears only when Front/Back image mode is used.
+- Print output is generated as real A4 PDF via jsPDF, centered with 2.2 mm top margin.
 
 ### Added
-- Document Studio now opens a 6-box document dashboard: Aadhaar, PAN, Voter ID, Driving Licence, ABHA and Ayushman.
-- Each document opens with a loading transition and a full professional editor workspace.
-- Universal printable engine for all document types.
-- PDF upload, page select, zoom in/out and fit-width controls.
-- Image upload for front/back sides.
-- Professional 8-handle crop tool with corner handles and side “|” handles.
-- Auto Crop, Reset Crop, Rotate Left and Rotate Right controls.
-- Live A4 print preview with top-center 2.2mm margin.
-- Front + Back layout with 85.6 × 54 mm card size and 2.4mm gap.
-- Download PDF and Print output.
-- Passport Photo Studio updated to use the same professional crop pattern and 2.2mm top start.
-
-### Preserved
-- Existing source structure.
-- Existing images/icons and offline files.
-- Previous Aadhaar Build-1A functionality is kept but overridden by the universal v41.8 engine.
-
-
-## v41.9 PDF Selection Fix
-- PDF Upload mode now creates only one printable preview card.
-- Front/Back preview is shown only when front/back images are uploaded in Image Upload mode.
-- Removed Set Front / Set Back buttons from official PDF workspace to avoid duplicate front/back output.
-- PDF crop stage now supports real zoom with scrollable large preview for easier selection.
+- Figma-style Document Studio Pro editor.
+- 6 document cards: Aadhaar, PAN, Voter, DL, ABHA, Ayushman.
+- Full dashboard editor per document with loading screen.
+- Free all-side crop selection.
+- 8 professional crop handles: 4 corners + 4 side `|` handles.
+- Scrollable/zoomable PDF workspace.
+- Crop position nudge controls.
+- Live A4 preview with red 2.2 mm top guide.
+- Lamination/fold-ready layout.
+- Passport Photo Studio uses the same crop engine.

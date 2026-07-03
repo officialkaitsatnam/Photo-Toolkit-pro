@@ -1042,3 +1042,141 @@ async function safePdfResize(){const f=document.getElementById('pdfToolFile').fi
   window.showTool=function(tool){ if(tool==='documentStudio')return window.documentStudio(); if(tool==='passport'||tool==='passportStudio')return window.passportStudio(); return prevShow?prevShow(tool):null; };
   window.addEventListener('load',()=>{document.title='Smart Photo Toolkit Pro '+VERSION; if(window.SPT_CONFIG)window.SPT_CONFIG.version=VERSION; const f=document.querySelector('.footer-copy'); if(f)f.textContent='© 2026 Smart Photo Toolkit Pro · '+VERSION;});
 })();
+
+/* =====================================================
+   Smart Photo Toolkit Pro v42.0
+   Document Studio Pro Exact A4 Crop Patch
+   Fixes:
+   1) Full PDF upload = single printable card preview only.
+   2) Front/Back preview appears only in image Front+Back mode.
+   3) Free 8-side crop selection; all sides can be dragged.
+   4) Final PDF is real A4, top margin 2.2mm, centered, lamination-ready.
+===================================================== */
+(function(){
+  const VERSION='v42.0-Document-Studio-Pro-A4-Crop';
+  const CARD_W=85.6, CARD_H=54, TOP=2.2, GAP=2.4;
+  const PASS_W=35, PASS_H=45, PASS_TOP=2.2;
+  const DOCS={
+    aadhaar:{name:'Aadhaar Card',icon:'aadhaar.jpg',hint:'Official PDF / image se exact printable'},
+    pan:{name:'PAN Card',icon:'pan.jpg',hint:'PAN front/back lamination layout'},
+    voter:{name:'Voter ID',icon:'voter.jpg',hint:'Voter card printable crop'},
+    dl:{name:'Driving Licence',icon:'dl.jpg',hint:'DL card exact A4 print'},
+    abha:{name:'ABHA Card',icon:'abha.jpg',hint:'ABHA printable card'},
+    ayushman:{name:'Ayushman Card',icon:'ayushman.jpg',hint:'Ayushman card print'}
+  };
+  const S={doc:null,tab:'pdf',mode:'both',pdfDoc:null,pdfPages:0,page:1,scale:1.35,pdfCanvas:null,pdfCrop:null,front:null,back:null,frontCrop:null,backCrop:null,lastPdf:null,docPdf:null,passImg:null,passCrop:null};
+  const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+  const ws=()=>document.getElementById('workspace');
+  const header=(t,s)=>typeof pageHeader==='function'?pageHeader(t,s):`<div class="page-head"><div><h1>${t}</h1><p>${s||''}</p></div><span class="pro-badge">${VERSION}</span></div>`;
+  function toastV(m){const t=document.getElementById('toast'); if(t){t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}else alert(m)}
+  function auth(tool){return typeof v40EnsureAuth==='function'?v40EnsureAuth(tool):true}
+  function readData(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
+  function loadImage(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src})}
+  function wait2(){return new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))}
+  function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
+
+  window.documentStudio=function(){
+    if(!auth('documentStudio')) return;
+    S.doc=null;
+    const cards=Object.entries(DOCS).map(([id,d])=>`<button class="v420-doc-card" onclick="v420OpenDoc('${id}')"><img src="${d.icon}" onerror="this.style.display='none'"><h3>${d.name}</h3><p>${d.hint}</p><small>Open Editor →</small></button>`).join('');
+    ws().innerHTML=header('Document Studio','6 document tools. Click any document to open its full crop + print dashboard.')+`<div class="v420-card"><div class="v420-head"><div><h2>Select Document</h2><p>Aadhaar, PAN, Voter, DL, ABHA, Ayushman — all use the same professional crop engine.</p></div></div><div class="v420-doc-grid">${cards}</div></div>`;
+  };
+  window.v420OpenDoc=function(id){
+    S.doc=id; S.docPdf=null;
+    ws().innerHTML=header('Opening '+DOCS[id].name,'Preparing professional crop workspace...')+`<div class="v420-card v420-loading"><span></span><b>Loading ${DOCS[id].name} editor</b><p>PDF preview, handles, A4 print engine ready ho raha hai...</p></div>`;
+    setTimeout(renderEditor,300);
+  };
+  function modeTabs(){return [['front','Front'],['back','Back'],['both','Front + Back']].map(([k,v])=>`<button class="${S.mode===k?'active':''}" onclick="v420Mode('${k}')">${v}</button>`).join('')}
+  function uploadTabs(){return [['pdf','Official PDF Upload'],['image','Front / Back Image']].map(([k,v])=>`<button class="${S.tab===k?'active':''}" onclick="v420Tab('${k}')">${v}</button>`).join('')}
+  window.v420Mode=m=>{S.mode=m;renderEditor()};
+  window.v420Tab=t=>{S.tab=t;renderEditor()};
+
+  function renderEditor(){
+    const d=DOCS[S.doc||'aadhaar'];
+    ws().innerHTML=header(`${d.name} Printable Editor`,'A4 exact print: free crop, all-side handles, 2.2mm top margin, center alignment.')+`
+      <div class="v420-shell">
+        <aside class="v420-left">
+          <div class="v420-card">
+            <div class="v420-mini-title"><img src="${d.icon}" onerror="this.style.display='none'"><div><b>${d.name}</b><br><small>Document Studio Pro</small></div></div>
+            <div class="v420-steps"><div class="v420-step ${S.pdfDoc||S.front||S.back?'done':''}"><span>1</span>Upload</div><div class="v420-step ${getCropState()?'done':''}"><span>2</span>Select Crop</div><div class="v420-step"><span>3</span>Preview A4</div><div class="v420-step"><span>4</span>Download / Print</div></div>
+            <div class="v420-help"><b>How it works?</b><ol><li>PDF upload karo</li><li>Page select + zoom karo</li><li>Blue handles se area select karo</li><li>Preview/Download/Print A4</li></ol></div>
+          </div>
+        </aside>
+        <section class="v420-center">
+          <div class="v420-card">
+            <div class="v420-breadcrumb">Dashboard › Document Studio › ${d.name}</div>
+            <div class="v420-head"><div><h2>${d.name} PDF – Crop & Printable</h2><p>Full PDF upload par single printable preview आएगा. Front/Back layout sirf front/back image mode me आएगा.</p></div><div class="v420-head-actions"><button onclick="documentStudio()">← Back</button><button class="v420-blue" onclick="v420Preview()">Preview</button><button class="v420-green" onclick="v420Download()">Download PDF</button><button onclick="v420Print()">Print</button></div></div>
+            <div class="v420-tabs">${uploadTabs()}</div>
+            ${S.tab==='image'?`<div class="v420-tabs">${modeTabs()}</div>`:''}
+            ${S.tab==='pdf'?pdfUploadHTML():imageUploadHTML()}
+            <div class="v420-stage-wrap"><h3>Crop Area</h3>${S.tab==='pdf'?pdfStageHTML():imageStageHTML()}<div class="v420-toolbar"><button onclick="v420AutoCrop()">✨ Auto Crop</button><button onclick="v420Zoom(1.2)">🔍 Zoom In</button><button onclick="v420Zoom(.84)">🔎 Zoom Out</button><button onclick="v420Fit()">⛶ Fit Width</button><button onclick="v420ResetCrop()">↻ Reset</button></div><div class="v420-tip">Tip: corner dots se resize, side ke “|” handles se width/height adjust, center se move. Crop free hai — sabhi taraf se area select kar sakte ho.</div></div>
+          </div>
+        </section>
+        <aside class="v420-right">
+          <div class="v420-card">
+            <h3>Crop Settings</h3>
+            <div class="v420-settings"><label>Top Margin (mm)<input id="v420Top" type="number" step="0.1" value="2.2" onchange="v420Preview()"></label><label>Output Size<select id="v420Paper"><option>A4 (210 × 297 mm)</option></select></label><label>Copies<select id="v420Copies" onchange="v420Preview()"><option value="1">1 Copy</option><option value="2">2 Copies</option><option value="4">4 Copies</option><option value="6">6 Copies</option></select></label></div>
+            <h3 style="margin-top:18px">Crop Position</h3><div class="v420-nudge"><button onclick="v420Nudge(0,-2)">↑</button><button onclick="v420Nudge(-2,0)">←</button><button onclick="v420Nudge(0,0)">●</button><button onclick="v420Nudge(2,0)">→</button><button onclick="v420Nudge(0,2)">↓</button></div>
+            <div class="v420-info" id="v420CropInfo"><div><span>Width</span><b>-</b></div><div><span>Height</span><b>-</b></div><div><span>Mode</span><b>${S.tab==='pdf'?'PDF Single':'Image '+S.mode}</b></div></div>
+          </div>
+          <div class="v420-card v420-a4box"><h3>Live A4 Preview</h3><div class="v420-a4"><div class="topline"></div><div id="v420Strip" class="v420-strip"></div><div class="v420-gap-label">Top Gap: 2.2 mm ↕</div></div><div class="v420-actions bottom"><button class="v420-blue" onclick="v420Preview()">Preview A4</button><button class="v420-green" onclick="v420Download()">Download</button><button onclick="v420Print()">Print</button></div><div class="v420-lam">Print → Fold → Laminate<br><small>PDF output real A4 hai; print dialog me Scale 100% / Actual Size rakho.</small></div></div>
+        </aside>
+      </div>`;
+    setTimeout(initAfterRender,160);
+  }
+  function getCropState(){return S.tab==='pdf'?S.pdfCrop:(S.frontCrop||S.backCrop)}
+  function pdfUploadHTML(){return `<div class="v420-upload"><label class="v420-drop"><input hidden type="file" accept="application/pdf" onchange="v420LoadPdf(event)">📄 ${S.pdfDoc?`${S.lastPdf||'PDF'} · ${S.pdfPages} page(s) loaded`:'Upload Official Full PDF'}</label>${S.pdfDoc?`<div class="v420-controls"><label>Page <select onchange="v420PdfPage(this.value)">${Array.from({length:S.pdfPages},(_,i)=>`<option value="${i+1}" ${S.page===i+1?'selected':''}>${i+1} / ${S.pdfPages}</option>`).join('')}</select></label><button class="v420-btn" onclick="v420Zoom(1.2)">Zoom +</button><button class="v420-btn" onclick="v420Zoom(.84)">Zoom -</button><button class="v420-btn" onclick="v420Fit()">Fit Width</button></div><div class="v420-file-ok">✓ PDF mode: output me sirf selected printable area आएगा, Front/Back duplicate nahi.</div>`:''}</div>`}
+  function imageUploadHTML(){const f=S.mode!=='back', b=S.mode!=='front';return `<div class="v420-upload"><div class="v420-row">${f?`<label class="v420-drop" style="flex:1"><input hidden type="file" accept="image/*" onchange="v420LoadImage(event,'front')">${S.front?'✅ Front image loaded':'Upload Front Image'}</label>`:''}${b?`<label class="v420-drop" style="flex:1"><input hidden type="file" accept="image/*" onchange="v420LoadImage(event,'back')">${S.back?'✅ Back image loaded':'Upload Back Image'}</label>`:''}</div><div class="v420-file-ok">Image mode me Front/Back preview tabhi आएगा jab front/back image upload ho.</div></div>`}
+  function pdfStageHTML(){return `<div id="v420PdfStage" class="v420-stage ${S.pdfDoc?'':'empty'}">${S.pdfDoc?'<div class="v420-stage-inner"><canvas id="v420PdfCanvas"></canvas></div>':'Upload PDF to start crop selection'}</div>`}
+  function imageStageHTML(){const f=S.mode!=='back', b=S.mode!=='front';return `<div class="v420-row">${f?`<div style="flex:1;min-width:270px"><b>Front Crop</b><div id="v420FrontStage" class="v420-stage ${S.front?'':'empty'}">${S.front?`<div class="v420-stage-inner"><img id="v420FrontImg" src="${S.front}"></div>`:'Upload front image first'}</div></div>`:''}${b?`<div style="flex:1;min-width:270px"><b>Back Crop</b><div id="v420BackStage" class="v420-stage ${S.back?'':'empty'}">${S.back?`<div class="v420-stage-inner"><img id="v420BackImg" src="${S.back}"></div>`:'Upload back image first'}</div></div>`:''}</div>`}
+
+  async function initAfterRender(){
+    if(S.tab==='pdf'&&S.pdfDoc) await renderPdf();
+    if(S.tab==='image'){
+      if(S.front&&$('#v420FrontImg')) S.frontCrop=createCrop($('#v420FrontStage'),$('#v420FrontImg'),S.frontCrop);
+      if(S.back&&$('#v420BackImg')) S.backCrop=createCrop($('#v420BackStage'),$('#v420BackImg'),S.backCrop);
+    }
+    v420Preview(); updateInfo();
+  }
+  window.v420LoadPdf=async function(e){const f=e.target.files[0]; if(!f)return; if(!window.pdfjsLib){toastV('PDF library load nahi hui. Refresh karke try karo.');return} S.lastPdf=f.name; const data=await f.arrayBuffer(); S.pdfDoc=await pdfjsLib.getDocument({data}).promise; S.pdfPages=S.pdfDoc.numPages; S.page=1; S.pdfCrop=null; S.tab='pdf'; renderEditor();}
+  window.v420PdfPage=function(v){S.page=Number(v);S.pdfCrop=null;renderEditor()}
+  async function renderPdf(){const canvas=$('#v420PdfCanvas'); if(!canvas||!S.pdfDoc)return; const page=await S.pdfDoc.getPage(S.page); const vp=page.getViewport({scale:S.scale}); canvas.width=Math.round(vp.width);canvas.height=Math.round(vp.height); await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise; await wait2(); S.pdfCrop=createCrop($('#v420PdfStage'),canvas,S.pdfCrop); updateInfo();}
+  window.v420LoadImage=async function(e,side){const f=e.target.files[0]; if(!f)return; S[side]=await normalizeImage(f); S[side+'Crop']=null; S.tab='image'; renderEditor();}
+  async function normalizeImage(file){const src=await readData(file); const img=await loadImage(src); const max=2400, sc=Math.min(1,max/Math.max(img.width,img.height)); const c=document.createElement('canvas'),ctx=c.getContext('2d'); c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.95)}
+
+  function mediaRect(stage,media){const sr=stage.getBoundingClientRect(), mr=media.getBoundingClientRect(); return {x:mr.left-sr.left+stage.scrollLeft,y:mr.top-sr.top+stage.scrollTop,w:mr.width,h:mr.height}}
+  function createCrop(stage,media,prev){if(!stage||!media)return null; stage.querySelectorAll('.v420-crop').forEach(n=>n.remove()); const b=mediaRect(stage,media); let st={stage,media,x:b.x+b.w*.08,y:b.y+b.h*.12,w:b.w*.84,h:b.h*.34}; if(prev&&prev.media===media){st={...st,x:prev.x,y:prev.y,w:prev.w,h:prev.h}} const box=document.createElement('div'); box.className='v420-crop'; ['nw','n','ne','e','se','s','sw','w'].forEach(h=>{const sp=document.createElement('span');sp.className='v420-h '+h;sp.dataset.h=h;box.appendChild(sp)}); const mv=document.createElement('i');mv.className='v420-move';mv.innerHTML='<b>↕</b>DRAG<br>MOVE';box.appendChild(mv); st.box=box; stage.appendChild(box); bindCrop(st); paint(st); return st}
+  function bounds(st){return mediaRect(st.stage,st.media)}
+  function limit(st,x=st.x,y=st.y,w=st.w,h=st.h){const b=bounds(st); w=Math.max(30,w); h=Math.max(24,h); if(x<b.x){w-=b.x-x;x=b.x} if(y<b.y){h-=b.y-y;y=b.y} if(x+w>b.x+b.w)w=b.x+b.w-x; if(y+h>b.y+b.h)h=b.y+b.h-y; return {x,y,w:Math.max(30,w),h:Math.max(24,h)}}
+  function paint(st){Object.assign(st,limit(st)); Object.assign(st.box.style,{left:st.x+'px',top:st.y+'px',width:st.w+'px',height:st.h+'px'}); updateInfo()}
+  function bindCrop(st){let mode='',start={}; const pos=e=>e.touches?{x:e.touches[0].clientX,y:e.touches[0].clientY}:{x:e.clientX,y:e.clientY}; const down=e=>{e.preventDefault();e.stopPropagation(); mode=e.target.dataset.h||'move'; const p=pos(e); start={px:p.x,py:p.y,x:st.x,y:st.y,w:st.w,h:st.h}; document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); document.addEventListener('touchmove',move,{passive:false}); document.addEventListener('touchend',up)}; const move=e=>{e.preventDefault(); const p=pos(e), dx=p.x-start.px, dy=p.y-start.py; let {x,y,w,h}=start; if(mode==='move'){x+=dx;y+=dy}else{if(mode.includes('e'))w+=dx;if(mode.includes('s'))h+=dy;if(mode.includes('w')){x+=dx;w-=dx}if(mode.includes('n')){y+=dy;h-=dy}} Object.assign(st,limit(st,x,y,w,h)); paint(st)}; const up=()=>{document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);document.removeEventListener('touchmove',move);document.removeEventListener('touchend',up); v420Preview()}; st.box.addEventListener('mousedown',down); st.box.addEventListener('touchstart',down,{passive:false})}
+  function activeCrop(){if(S.tab==='pdf')return S.pdfCrop; if(S.mode!=='back'&&S.frontCrop)return S.frontCrop; if(S.backCrop)return S.backCrop; return null}
+  window.v420Nudge=(dx,dy)=>{const st=activeCrop(); if(!st)return; st.x+=dx;st.y+=dy;paint(st);v420Preview()}
+  window.v420Zoom=f=>{if(S.tab==='pdf'){S.scale=clamp(S.scale*f,.55,4.5); renderPdf()}else toastV('Image mode me crop box handles use karo')}
+  window.v420Fit=()=>{if(S.tab==='pdf'){S.scale=1.25;renderPdf()}else toastV('Fit Width PDF ke liye hai')}
+  window.v420AutoCrop=()=>{const targets=S.tab==='pdf'?[S.pdfCrop]:[S.frontCrop,S.backCrop].filter(Boolean); targets.forEach(st=>{const b=bounds(st); Object.assign(st,{x:b.x+b.w*.055,y:b.y+b.h*.07,w:b.w*.89,h:b.h*.42}); paint(st)}); v420Preview(); toastV('Auto crop applied. Ab 8 handles se fine tune karo.')}
+  window.v420ResetCrop=()=>{if(S.tab==='pdf'){S.pdfCrop=null;renderPdf()}else{S.frontCrop=null;S.backCrop=null;renderEditor()} }
+
+  async function cropToImage(st,cardRatio=CARD_W/CARD_H){if(!st)return null; const m=st.media, b=bounds(st); let rx=(st.x-b.x)/b.w, ry=(st.y-b.y)/b.h, rw=st.w/b.w, rh=st.h/b.h; rx=clamp(rx,0,1);ry=clamp(ry,0,1);rw=clamp(rw,.01,1-rx);rh=clamp(rh,.01,1-ry); let source=m, sw=m.width, sh=m.height; if(m.tagName==='IMG'){source=await loadImage(m.src);sw=source.width;sh=source.height} const c=document.createElement('canvas'),ctx=c.getContext('2d'); c.width=1600;c.height=Math.round(c.width/cardRatio);ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(source,sw*rx,sh*ry,sw*rw,sh*rh,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.96)}
+  async function collectCards(){const arr=[]; if(S.tab==='pdf'){const src=await cropToImage(S.pdfCrop); if(src)arr.push({src,label:'PRINTABLE',single:true})} else {if(S.mode!=='back'){const src=await cropToImage(S.frontCrop); if(src)arr.push({src,label:'FRONT'})} if(S.mode!=='front'){const src=await cropToImage(S.backCrop); if(src)arr.push({src,label:'BACK'})}} return arr}
+  window.v420Preview=async function(){const box=$('#v420Strip'); if(!box)return; const cards=await collectCards(); if(!cards.length){box.innerHTML='<em style="font-size:10px;color:#64748b;font-weight:900">Crop preview yahan dikhega</em>';return} box.innerHTML=cards.map(c=>`<div class="v420-item ${cards.length===1?'single':''}"><img src="${c.src}"><small>${c.label}</small></div>`).join(''); updateInfo()}
+  function topMM(){return Number($('#v420Top')?.value||TOP)||TOP}
+  async function makePdf(){const cards=await collectCards(); if(!cards.length){toastV('Pehle upload karke crop area select karo.');return null} const {jsPDF}=window.jspdf; const pdf=new jsPDF({unit:'mm',format:'a4'}); const copies=Number($('#v420Copies')?.value||1); let y=topMM(); for(let c=0;c<copies;c++){const total=cards.length*CARD_W+(cards.length-1)*GAP; let x=(210-total)/2; for(const im of cards){pdf.addImage(im.src,'JPEG',x,y,CARD_W,CARD_H); pdf.setDrawColor(0); pdf.setLineWidth(.25); pdf.rect(x,y,CARD_W,CARD_H); pdf.setFontSize(6); pdf.setTextColor(20); pdf.text(im.label,x+CARD_W/2,y+CARD_H+2.4,{align:'center'}); x+=CARD_W+GAP} y+=CARD_H+GAP+6; if(y+CARD_H>294&&c<copies-1){pdf.addPage();y=topMM()}} pdf.setFontSize(7);pdf.setTextColor(90);pdf.text('Smart Photo Toolkit Pro '+VERSION+' · A4 Actual Size / 100%',105,292,{align:'center'}); S.docPdf=pdf; return pdf}
+  window.v420Download=async()=>{const pdf=await makePdf(); if(pdf)pdf.save(`${S.doc||'document'}-A4-printable.pdf`)};
+  window.v420Print=async()=>{const pdf=await makePdf(); if(!pdf)return; pdf.autoPrint(); window.open(URL.createObjectURL(pdf.output('blob')),'_blank')};
+  function updateInfo(){const st=activeCrop(), info=$('#v420CropInfo'); if(!info||!st)return; const b=bounds(st); info.innerHTML=`<div><span>Width</span><b>${Math.round(st.w)} px</b></div><div><span>Height</span><b>${Math.round(st.h)} px</b></div><div><span>Area</span><b>${Math.round((st.w/b.w)*100)}% × ${Math.round((st.h/b.h)*100)}%</b></div><div><span>Mode</span><b>${S.tab==='pdf'?'PDF Single':'Image '+S.mode}</b></div>`}
+
+  /* Passport uses same all-side crop engine, but output is fixed 35x45mm */
+  window.passportStudio=function(){ws().innerHTML=header('Passport Photo Studio','Professional crop + exact 35×45 mm A4 photo sheet.')+`<div class="v420-shell"><section class="v420-center"><div class="v420-card"><div class="v420-head"><div><h2>Passport Photo Crop</h2><p>Same all-side crop handles. Output fixed 35 × 45 mm.</p></div><div class="v420-head-actions"><button class="v420-green" onclick="v420PassDownload()">Download PDF</button><button onclick="v420PassPrint()">Print</button></div></div><label class="v420-drop"><input hidden type="file" accept="image/*" onchange="v420LoadPass(event)">${S.passImg?'✅ Photo loaded':'Upload Passport Photo'}</label><div class="v420-stage-wrap" style="margin-top:14px"><div id="v420PassStage" class="v420-stage ${S.passImg?'':'empty'}">${S.passImg?`<div class="v420-stage-inner"><img id="v420PassImg" src="${S.passImg}"></div>`:'Upload photo first'}</div><div class="v420-toolbar"><button onclick="v420PassAuto()">Auto Crop</button><button onclick="v420PassReset()">Reset</button></div></div></div></section><aside class="v420-right"><div class="v420-card"><h3>A4 Passport Preview</h3><div class="v420-a4"><div class="topline"></div><div id="v420PassStrip" class="v420-pass-strip"></div></div><div class="v420-settings" style="margin-top:12px"><label>Photos<select id="v420PassCount" onchange="v420PassPreview()"><option>5</option><option>6</option><option>8</option><option>12</option></select></label></div><div class="v420-actions bottom"><button class="v420-blue" onclick="v420PassPreview()">Preview</button><button class="v420-green" onclick="v420PassDownload()">Download</button><button onclick="v420PassPrint()">Print</button></div></div></aside></div>`; setTimeout(()=>{if(S.passImg&&$('#v420PassImg')){S.passCrop=createCrop($('#v420PassStage'),$('#v420PassImg'),S.passCrop); v420PassPreview()}},150)};
+  window.v420LoadPass=async e=>{const f=e.target.files[0]; if(!f)return; S.passImg=await normalizeImage(f);S.passCrop=null;passportStudio()};
+  window.v420PassAuto=()=>{if(!S.passCrop&&$('#v420PassImg'))S.passCrop=createCrop($('#v420PassStage'),$('#v420PassImg'),S.passCrop); const st=S.passCrop;if(!st)return; const b=bounds(st); let h=b.h*.82,w=h*(PASS_W/PASS_H); if(w>b.w*.7){w=b.w*.7;h=w/(PASS_W/PASS_H)} Object.assign(st,{x:b.x+(b.w-w)/2,y:b.y+(b.h-h)/2,w,h}); paint(st); v420PassPreview()};
+  window.v420PassReset=()=>{S.passCrop=null;passportStudio()};
+  async function cropPass(){return cropToImage(S.passCrop,PASS_W/PASS_H)}
+  window.v420PassPreview=async()=>{const box=$('#v420PassStrip'); if(!box||!S.passCrop)return; const src=await cropPass(); const n=Number($('#v420PassCount')?.value||5); box.innerHTML=Array.from({length:n},()=>`<img src="${src}">`).join('')};
+  async function passPdf(){if(!S.passCrop){toastV('Pehle photo upload/crop karo');return null} const src=await cropPass(); const n=Number($('#v420PassCount')?.value||5); const {jsPDF}=window.jspdf; const pdf=new jsPDF({unit:'mm',format:'a4'}); let x=5,y=PASS_TOP,g=3; for(let i=0;i<n;i++){if(x+PASS_W>205){x=5;y+=PASS_H+g} pdf.addImage(src,'JPEG',x,y,PASS_W,PASS_H);pdf.rect(x,y,PASS_W,PASS_H);x+=PASS_W+g} return pdf}
+  window.v420PassDownload=async()=>{const pdf=await passPdf(); if(pdf)pdf.save('passport-35x45-a4.pdf')}; window.v420PassPrint=async()=>{const pdf=await passPdf(); if(!pdf)return;pdf.autoPrint();window.open(URL.createObjectURL(pdf.output('blob')),'_blank')};
+
+  const oldShow=window.showTool;
+  window.showTool=function(tool){if(tool==='documentStudio')return window.documentStudio(); if(tool==='passport'||tool==='passportStudio')return window.passportStudio(); return oldShow?oldShow(tool):null};
+  window.addEventListener('load',()=>{document.title='Smart Photo Toolkit Pro '+VERSION; if(window.SPT_CONFIG)window.SPT_CONFIG.version=VERSION; const f=document.querySelector('.footer-copy'); if(f)f.textContent='© 2026 Smart Photo Toolkit Pro · '+VERSION;});
+})();
