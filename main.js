@@ -1,7 +1,7 @@
-/* Smart Photo Toolkit Pro v42.8 - Safe Isolation Restore */
+/* Smart Photo Toolkit Pro v42.9 - Passport/PDF/Auth Regression Safe */
 'use strict';
 
-const VERSION = 'v42.8-Real-Development-Foundation';
+const VERSION = 'v42.9-Passport-PDF-Auth-Restore';
 const DOCS = [
   {id:'aadhaar', title:'Aadhaar Card', img:'aadhaar.jpg', desc:'Official PDF crop + 85.6 × 54 mm printable'},
   {id:'pan', title:'PAN Card', img:'pan.jpg', desc:'PAN printable crop and A4 output'},
@@ -16,7 +16,7 @@ const CARD = {w:85.6, h:54};
 const LAMINATION = {w:171.2, h:54}; // official Aadhaar front+back fold strip
 let app, currentView='dashboard';
 let state = null;
-const AUTH_KEY='spt_user_v428';
+const AUTH_KEY='spt_user_v429';
 let currentUser = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
 
 window.addEventListener('load', () => {
@@ -71,11 +71,25 @@ function updateAuthUI(){
 function showAuthModal(type='signin'){
   const isSignup=type==='signup';
   const modal=document.createElement('div'); modal.className='modal-backdrop';
-  modal.innerHTML=`<div class="auth-modal"><button class="modal-x">×</button><h2>${isSignup?'Create account':'Sign in'}</h2><p>${isSignup?'Signup karke profile/workspace use karo.':'Apne Smart Photo Toolkit account me login karo.'}</p>${isSignup?'<label>Name</label><input id="authName" placeholder="Your name">':''}<label>Email</label><input id="authEmail" type="email" placeholder="you@example.com"><label>Password</label><input id="authPass" type="password" placeholder="Password"><button class="primary wide" id="authSubmit">${isSignup?'Signup':'Sign in'}</button><button class="link-btn" id="switchAuth">${isSignup?'Already account? Sign in':'New user? Signup'}</button><small class="muted-note">Demo/local login enabled. Google Apps Script API connect karne par live auth use hoga.</small></div>`;
+  modal.innerHTML=`<div class="auth-modal pro-auth"><button class="modal-x">×</button>
+    <div class="auth-brand"><span class="logo">📸</span><div><h2>Smart Photo Toolkit</h2><p>${isSignup?'Create your account':'Welcome back, sign in'}</p></div></div>
+    <div class="auth-tabs"><button class="${!isSignup?'active':''}" id="tabSignin">Sign In</button><button class="${isSignup?'active':''}" id="tabSignup">Sign Up</button></div>
+    ${isSignup?'<label>Full Name</label><input id="authName" placeholder="Your name">':''}
+    <label>Email</label><input id="authEmail" type="email" placeholder="you@example.com">
+    <label>Password</label><div class="pass-row"><input id="authPass" type="password" placeholder="Password"><button id="togglePass" type="button">👁</button></div>
+    <div class="auth-options"><label><input type="checkbox" id="rememberMe" checked> Remember me</label><button class="link-btn" id="forgotPass">Forgot Password?</button></div>
+    <button class="primary wide" id="authSubmit">${isSignup?'Create Account':'Sign In'}</button>
+    <button class="google-btn" id="googleSign">G Continue with Google</button>
+    <small class="muted-note">Demo/local auth active. Apps Script backend connect hone par live account system use hoga.</small>
+  </div>`;
   document.body.appendChild(modal);
   modal.querySelector('.modal-x').onclick=()=>modal.remove();
-  modal.querySelector('#switchAuth').onclick=()=>{modal.remove(); showAuthModal(isSignup?'signin':'signup')};
-  modal.querySelector('#authSubmit').onclick=()=>{ const email=modal.querySelector('#authEmail').value.trim(); const pass=modal.querySelector('#authPass').value.trim(); const name=isSignup?(modal.querySelector('#authName').value.trim()||'Satnam'):email.split('@')[0]||'Satnam'; if(!email||!pass){toast('Email aur password required');return;} currentUser={name,email,plan:'Free User'}; localStorage.setItem(AUTH_KEY,JSON.stringify(currentUser)); updateAuthUI(); modal.remove(); toast(isSignup?'Signup successful':'Sign in successful'); };
+  modal.querySelector('#tabSignin').onclick=()=>{modal.remove();showAuthModal('signin')};
+  modal.querySelector('#tabSignup').onclick=()=>{modal.remove();showAuthModal('signup')};
+  modal.querySelector('#togglePass').onclick=()=>{const p=modal.querySelector('#authPass');p.type=p.type==='password'?'text':'password'};
+  modal.querySelector('#forgotPass').onclick=()=>toast('Forgot Password restore: backend OTP connect next API build me hoga.');
+  modal.querySelector('#googleSign').onclick=()=>toast('Google Sign-In placeholder ready. OAuth config connect karna hoga.');
+  modal.querySelector('#authSubmit').onclick=()=>{ const email=modal.querySelector('#authEmail').value.trim(); const pass=modal.querySelector('#authPass').value.trim(); const name=isSignup?(modal.querySelector('#authName').value.trim()||'Satnam'):email.split('@')[0]||'Satnam'; if(!email||!pass){toast('Email aur password required');return;} currentUser={name,email,plan:'Free User'}; if(modal.querySelector('#rememberMe')?.checked)localStorage.setItem(AUTH_KEY,JSON.stringify(currentUser)); updateAuthUI(); modal.remove(); toast(isSignup?'Signup successful':'Sign in successful'); };
 }
 function logoutUser(){ currentUser=null; localStorage.removeItem(AUTH_KEY); updateAuthUI(); toast('Logout successful'); showDashboard(); }
 function showProfileEdit(){ exitEditorMode(); app.innerHTML=`<section class="hero"><h1>Profile Edit</h1><p>Profile menu restore ho gaya hai. Yahan name, email aur plan update kar sakte ho.</p></section><section class="tool-panel"><label>Name</label><input id="profileName" value="${currentUser?.name||'Satnam'}"><label>Email</label><input id="profileEmail" value="${currentUser?.email||''}"><label>Plan</label><select id="profilePlan"><option>Free User</option><option>Premium User</option></select><button class="primary" id="saveProfile">Save Profile</button></section>`; const plan=document.getElementById('profilePlan'); if(plan)plan.value=currentUser?.plan||'Free User'; document.getElementById('saveProfile').onclick=()=>{currentUser={name:val('profileName')||'Satnam',email:val('profileEmail')||'',plan:val('profilePlan')||'Free User'}; localStorage.setItem(AUTH_KEY,JSON.stringify(currentUser)); updateAuthUI(); toast('Profile updated');}; }
@@ -84,10 +98,75 @@ function showFooterPage(type){ exitEditorMode(); const map={about:['About','Smar
 function val(id){return document.getElementById(id)?.value||''}
 function toast(msg){ let t=document.getElementById('toast'); if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t)} t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); }
 function toolShell(title,desc,body){ return `<section class="hero"><h1>${title}</h1><p>${desc}</p></section><section class="tool-panel">${body}</section>`; }
-function passportHtml(){ return toolShell('Passport Photo','Passport/photo module restore. Document Studio updates is module ko affect nahi karenge.',`<div class="upload-box full"><label>Upload Photo</label><input type="file" id="passportInput" accept="image/*"><small>Photo upload karke preview dekhein.</small></div><div class="passport-preview"><canvas id="passportCanvas" width="420" height="520"></canvas></div><div class="toolbar"><button id="passportFit">Fit Photo</button><button id="passportDownload" class="primary">Download JPG</button></div>`); }
-function bindPassportTool(){ const c=document.getElementById('passportCanvas'), ctx=c.getContext('2d'); ctx.fillStyle='#eef5ff';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#60718b';ctx.font='bold 22px Arial';ctx.textAlign='center';ctx.fillText('Passport Photo Preview',c.width/2,c.height/2); let img=null; document.getElementById('passportInput').onchange=e=>{const f=e.target.files[0]; if(!f)return; img=new Image(); img.onload=()=>{ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height); const r=Math.min(c.width/img.width,c.height/img.height); const w=img.width*r,h=img.height*r;ctx.drawImage(img,(c.width-w)/2,(c.height-h)/2,w,h)}; img.src=URL.createObjectURL(f)}; document.getElementById('passportDownload').onclick=()=>downloadCanvas(c,'passport_photo.jpg','image/jpeg'); }
-function pdfStudioHtml(){ return toolShell('PDF Studio','PDF Resizer/PDF Studio restore. Merge, split, compress placeholders safe mode me hain.',`<div class="upload-box full"><label>Upload PDF</label><input type="file" id="pdfStudioInput" accept="application/pdf"><small id="pdfStudioInfo">PDF select karein.</small></div><div class="toolbar"><button class="primary" id="pdfResizeBtn">Resize / Optimize</button><button id="pdfMergeBtn">Merge</button><button id="pdfSplitBtn">Split</button></div>`); }
-function bindPdfStudioTool(){ const info=document.getElementById('pdfStudioInfo'); document.getElementById('pdfStudioInput').onchange=e=>{const f=e.target.files[0]; if(f)info.textContent=`Selected: ${f.name} (${Math.round(f.size/1024)} KB)`}; ['pdfResizeBtn','pdfMergeBtn','pdfSplitBtn'].forEach(id=>document.getElementById(id).onclick=()=>toast('PDF Studio tool restored. Advanced processing next build me connect hoga.')); }
+function passportHtml(){ return toolShell('Passport Photo','India passport style A4 print: 35 × 45 mm, 5 photos, 2.2 mm gap and 2.2 mm top margin.',`
+  <div class="passport-tool-v429">
+    <div class="tool-row">
+      <div class="upload-box full"><label>Upload Passport Photo</label><input type="file" id="passportInput" accept="image/*"><small>India passport preset: 35 × 45 mm. A4 par 5 photo print.</small></div>
+      <div class="mini-controls">
+        <label>Photo Width (mm)</label><input id="ppW" type="number" step="0.1" value="35">
+        <label>Photo Height (mm)</label><input id="ppH" type="number" step="0.1" value="45">
+        <label>Count</label><input id="ppCount" type="number" min="1" max="20" value="5">
+        <label>Gap (mm)</label><input id="ppGap" type="number" step="0.1" value="2.2">
+        <label>Top A4 Gap (mm)</label><input id="ppTop" type="number" step="0.1" value="2.2">
+      </div>
+    </div>
+    <div class="toolbar"><button id="passportFit">Fit / Refresh</button><button id="passportDownload" class="primary">Download A4 PDF</button><button id="passportPrint" class="success">Print A4</button></div>
+    <div class="passport-preview"><canvas id="passportCanvas" width="1240" height="1754"></canvas></div>
+  </div>`); }
+function bindPassportTool(){
+  const c=document.getElementById('passportCanvas'), ctx=c.getContext('2d');
+  let img=null;
+  const dpi=150, pxPerMm=dpi/25.4;
+  function n(id,def){return parseFloat(document.getElementById(id)?.value)||def}
+  function draw(){
+    c.width=Math.round(210*pxPerMm); c.height=Math.round(297*pxPerMm);
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+    ctx.strokeStyle='#d7e2f2';ctx.lineWidth=1;ctx.strokeRect(0,0,c.width,c.height);
+    const w=n('ppW',35)*pxPerMm,h=n('ppH',45)*pxPerMm,g=n('ppGap',2.2)*pxPerMm,top=n('ppTop',2.2)*pxPerMm,count=Math.max(1,Math.min(20,parseInt(document.getElementById('ppCount')?.value||5)));
+    const totalW=count*w+(count-1)*g; let x=(c.width-totalW)/2, y=top;
+    ctx.fillStyle='#f1f6ff';ctx.fillRect(0,0,c.width,top);
+    ctx.strokeStyle='#1769ff';ctx.setLineDash([8,8]);ctx.beginPath();ctx.moveTo(0,top);ctx.lineTo(c.width,top);ctx.stroke();ctx.setLineDash([]);
+    for(let i=0;i<count;i++){
+      const px=x+i*(w+g); ctx.fillStyle='#fff';ctx.fillRect(px,y,w,h);ctx.strokeStyle='#111827';ctx.lineWidth=2;ctx.strokeRect(px,y,w,h);
+      if(img){
+        const r=Math.max(w/img.width,h/img.height); const iw=img.width*r, ih=img.height*r;
+        ctx.save(); ctx.beginPath();ctx.rect(px,y,w,h);ctx.clip(); ctx.drawImage(img,px+(w-iw)/2,y+(h-ih)/2,iw,ih); ctx.restore();
+      }else{ctx.fillStyle='#8090a8';ctx.font='bold 24px Arial';ctx.textAlign='center';ctx.fillText('35×45',px+w/2,y+h/2);}
+    }
+    ctx.fillStyle='#2d3b55';ctx.font='18px Arial';ctx.textAlign='left';ctx.fillText('A4 Passport Layout • 5 Photos • 2.2 mm top/gap',18,c.height-24);
+  }
+  document.getElementById('passportInput').onchange=e=>{const f=e.target.files[0]; if(!f)return; img=new Image(); img.onload=draw; img.src=URL.createObjectURL(f)};
+  ['ppW','ppH','ppCount','ppGap','ppTop'].forEach(id=>document.getElementById(id)?.addEventListener('input',draw));
+  document.getElementById('passportFit').onclick=draw;
+  document.getElementById('passportDownload').onclick=()=>{ const {jsPDF}=window.jspdf||{}; if(!jsPDF){downloadCanvas(c,'india_passport_5_photo_a4.png','image/png');return;} const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'}); pdf.addImage(c.toDataURL('image/jpeg',0.96),'JPEG',0,0,210,297); pdf.save('india_passport_5_photo_a4.pdf'); };
+  document.getElementById('passportPrint').onclick=()=>{ const data=c.toDataURL('image/png'); const w=window.open('','_blank'); w.document.write(`<html><head><title>Passport A4 Print</title><style>@page{size:A4;margin:0}body{margin:0}img{width:210mm;height:297mm;display:block}</style></head><body><img src="${data}"></body></html>`); w.document.close(); setTimeout(()=>w.print(),350); };
+  draw();
+}
+function pdfStudioHtml(){ return toolShell('PDF Studio','PDF Resizer presets restored: 20KB, 50KB, 100KB, 200KB, 300KB, 400KB, 500KB and custom.',`
+  <div class="pdf-resizer-v429">
+    <div class="upload-box full"><label>Upload PDF</label><input type="file" id="pdfStudioInput" accept="application/pdf"><small id="pdfStudioInfo">PDF select karein.</small></div>
+    <label>Target Size</label>
+    <div class="preset-grid">
+      <button data-kb="20">20 KB</button><button data-kb="50">50 KB</button><button data-kb="100">100 KB</button><button data-kb="200">200 KB</button><button data-kb="300">300 KB</button><button data-kb="400">400 KB</button><button data-kb="500">500 KB</button>
+    </div>
+    <label>Custom Size (KB)</label><input id="customPdfKb" type="number" value="100" min="10">
+    <div class="toolbar"><button class="primary" id="pdfResizeBtn">Resize / Optimize</button><button id="pdfDownloadOriginal">Download Original</button></div>
+    <div id="pdfResizeStatus" class="info-list"></div>
+  </div>`); }
+function bindPdfStudioTool(){
+  let file=null,target=100; const info=document.getElementById('pdfStudioInfo'), status=document.getElementById('pdfResizeStatus');
+  document.getElementById('pdfStudioInput').onchange=e=>{file=e.target.files[0]; if(file){info.textContent=`Selected: ${file.name} (${Math.round(file.size/1024)} KB)`; status.innerHTML='Preset select karke Resize / Optimize dabayein.'}};
+  document.querySelectorAll('[data-kb]').forEach(b=>b.onclick=()=>{target=parseInt(b.dataset.kb); document.getElementById('customPdfKb').value=target; document.querySelectorAll('[data-kb]').forEach(x=>x.classList.remove('active')); b.classList.add('active')});
+  document.getElementById('customPdfKb').oninput=e=>{target=parseInt(e.target.value)||100; document.querySelectorAll('[data-kb]').forEach(x=>x.classList.remove('active'))};
+  document.getElementById('pdfDownloadOriginal').onclick=()=>{if(!file)return toast('Pehle PDF upload karo'); const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download=file.name; a.click();};
+  document.getElementById('pdfResizeBtn').onclick=()=>{
+    if(!file)return toast('Pehle PDF upload karo');
+    const kb=Math.max(10,parseInt(document.getElementById('customPdfKb').value)||target); const current=Math.round(file.size/1024);
+    if(current<=kb){ status.innerHTML=`✅ PDF already ${current} KB hai, target ${kb} KB se chhota hai. Original download kar sakte ho.`; return; }
+    status.innerHTML=`⚠️ Static browser build me real PDF recompression limited hai. Target selected: <b>${kb} KB</b>, current: <b>${current} KB</b>.<br>Next server/API build me exact compression engine connect hoga. Abhi original PDF safe download available hai.`;
+    toast('Target preset saved. Compression engine API next build me connect hoga.');
+  };
+}
 function imageCompressorHtml(){ return toolShell('Image Compressor','Image compressor restore.',`<div class="upload-box full"><label>Upload Image</label><input type="file" id="compressInput" accept="image/*"></div><div class="toolbar"><button id="compressBtn" class="primary">Compress</button></div><div id="compressInfo" class="info-list"></div>`); }
 function bindImageCompressorTool(){ let file=null; document.getElementById('compressInput').onchange=e=>{file=e.target.files[0]; document.getElementById('compressInfo').textContent=file?`Selected ${file.name} (${Math.round(file.size/1024)} KB)`:''}; document.getElementById('compressBtn').onclick=()=>toast(file?'Compressor restored. HD compression engine next build me improve hoga.':'Pehle image upload karo'); }
 function nameDateHtml(){ return toolShell('Name / Date Photo','Name/date photo module restore.',`<div class="upload-box full"><label>Upload Photo</label><input type="file" id="ndInput" accept="image/*"></div><label>Name/Text</label><input id="ndText" placeholder="Name or date text"><canvas id="ndCanvas" width="640" height="420"></canvas><div class="toolbar"><button id="ndApply" class="primary">Apply Text</button><button id="ndDownload">Download</button></div>`); }
