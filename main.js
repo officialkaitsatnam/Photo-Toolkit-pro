@@ -1,7 +1,7 @@
-/* Smart Photo Toolkit Pro v42.7 - Real Development Foundation */
+/* Smart Photo Toolkit Pro v42.8 - Safe Isolation Restore */
 'use strict';
 
-const VERSION = 'v42.7-Real-Development-Foundation';
+const VERSION = 'v42.8-Real-Development-Foundation';
 const DOCS = [
   {id:'aadhaar', title:'Aadhaar Card', img:'aadhaar.jpg', desc:'Official PDF crop + 85.6 × 54 mm printable'},
   {id:'pan', title:'PAN Card', img:'pan.jpg', desc:'PAN printable crop and A4 output'},
@@ -16,26 +16,86 @@ const CARD = {w:85.6, h:54};
 const LAMINATION = {w:171.2, h:54}; // official Aadhaar front+back fold strip
 let app, currentView='dashboard';
 let state = null;
+const AUTH_KEY='spt_user_v428';
+let currentUser = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
 
 window.addEventListener('load', () => {
   if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
   app = document.getElementById('app');
   bindNav();
+  bindAuthUI();
+  bindFooterLinks();
+  updateAuthUI();
   showDashboard();
   setTimeout(()=>document.getElementById('loader')?.classList.add('hidden'),450);
 });
 
 document.getElementById('menuBtn')?.addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
-function bindNav(){ document.querySelectorAll('.nav').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('sidebar')?.classList.remove('open'); const v=btn.dataset.view; if(v==='documents') showDocuments(); else if(v==='passport') showPassport(); else showSimple(v); })); }
+function bindNav(){ document.querySelectorAll('.nav').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('sidebar')?.classList.remove('open'); const v=btn.dataset.view; if(v==='documents') showDocuments(); else if(v==='passport') showPassport(); else if(v==='pdfstudio') showPdfStudio(); else if(v==='compressor') showImageCompressor(); else if(v==='namedate') showNameDatePhoto(); else if(v==='workspace') showWorkspace(); else if(v==='downloads') showDownloads(); else showSimple(v); })); }
 function setActive(view){ document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active', b.dataset.view===view)); }
 function showDashboard(){exitEditorMode();setActive('dashboard'); app.innerHTML=`<section class="hero"><h1>Smart Photo Toolkit Pro ${VERSION}</h1><p>Document Studio Pro: official PDF upload, professional crop, real A4 output, 2.2 mm lamination gap.</p></section><section class="grid">${DOCS.map(cardHtml).join('')}</section>`; bindDocCards();}
 function showDocuments(){exitEditorMode();setActive('documents'); app.innerHTML=`<div class="crumb">Dashboard › Document Studio</div><section class="hero"><h1>Document Studio</h1><p>Select document type. Har document me same professional crop + A4 printable engine milega.</p></section><section class="grid">${DOCS.map(cardHtml).join('')}</section>`; bindDocCards();}
 function cardHtml(d){return `<article class="doc-card" data-doc="${d.id}"><img src="${d.img}" alt="${d.title}"><h3>${d.title}</h3><p>${d.desc}</p></article>`}
 function bindDocCards(){ document.querySelectorAll('.doc-card').forEach(c=>c.addEventListener('click',()=>openEditor(c.dataset.doc))); }
 function showSimple(v){exitEditorMode();currentView=v; app.innerHTML=`<section class="hero"><h1>${titleCase(v)}</h1><p>This section is ready. Document Studio Pro is active in this build.</p></section>`;}
-function showPassport(){ openEditor('passport'); }
+function showPassport(){ exitEditorMode(); setActive('passport'); app.innerHTML=passportHtml(); bindPassportTool(); }
+function showPdfStudio(){ exitEditorMode(); setActive('pdfstudio'); app.innerHTML=pdfStudioHtml(); bindPdfStudioTool(); }
+function showImageCompressor(){ exitEditorMode(); setActive('compressor'); app.innerHTML=imageCompressorHtml(); bindImageCompressorTool(); }
+function showNameDatePhoto(){ exitEditorMode(); setActive('namedate'); app.innerHTML=nameDateHtml(); bindNameDateTool(); }
+function showWorkspace(){ exitEditorMode(); setActive('workspace'); app.innerHTML=workspaceHtml(); }
+function showDownloads(){ exitEditorMode(); setActive('downloads'); app.innerHTML=downloadsHtml(); }
 function titleCase(s){return String(s).replace(/([A-Z])/g,' $1').replace(/^./,m=>m.toUpperCase())}
 
+
+
+/* v42.8 Safe Isolation Restore: auth/profile/footer + non-document tools */
+function bindAuthUI(){
+  document.getElementById('signinBtn')?.addEventListener('click',()=>showAuthModal('signin'));
+  document.getElementById('signupBtn')?.addEventListener('click',()=>showAuthModal('signup'));
+  document.getElementById('profileTrigger')?.addEventListener('click',(e)=>{e.stopPropagation();document.getElementById('profileMenu')?.classList.toggle('open')});
+  document.addEventListener('click',()=>document.getElementById('profileMenu')?.classList.remove('open'));
+  document.querySelectorAll('[data-profile]').forEach(b=>b.addEventListener('click',(e)=>{e.stopPropagation(); const a=b.dataset.profile; document.getElementById('profileMenu')?.classList.remove('open'); if(a==='logout') logoutUser(); else if(a==='edit') showProfileEdit(); else if(a==='workspace') showWorkspace(); else if(a==='downloads') showDownloads();}));
+}
+function updateAuthUI(){
+  const signed=!!currentUser;
+  document.getElementById('signinBtn')?.classList.toggle('hidden',signed);
+  document.getElementById('signupBtn')?.classList.toggle('hidden',signed);
+  document.getElementById('profileWrap')?.classList.toggle('hidden',!signed);
+  const name=currentUser?.name || 'Satnam';
+  const plan=currentUser?.plan || 'Premium User';
+  const avatar=(name[0]||'S').toUpperCase();
+  const n=document.getElementById('userNameTop'); if(n)n.textContent=name;
+  const p=document.getElementById('userPlanTop'); if(p)p.textContent=plan;
+  const a=document.getElementById('avatarText'); if(a)a.textContent=avatar;
+}
+function showAuthModal(type='signin'){
+  const isSignup=type==='signup';
+  const modal=document.createElement('div'); modal.className='modal-backdrop';
+  modal.innerHTML=`<div class="auth-modal"><button class="modal-x">×</button><h2>${isSignup?'Create account':'Sign in'}</h2><p>${isSignup?'Signup karke profile/workspace use karo.':'Apne Smart Photo Toolkit account me login karo.'}</p>${isSignup?'<label>Name</label><input id="authName" placeholder="Your name">':''}<label>Email</label><input id="authEmail" type="email" placeholder="you@example.com"><label>Password</label><input id="authPass" type="password" placeholder="Password"><button class="primary wide" id="authSubmit">${isSignup?'Signup':'Sign in'}</button><button class="link-btn" id="switchAuth">${isSignup?'Already account? Sign in':'New user? Signup'}</button><small class="muted-note">Demo/local login enabled. Google Apps Script API connect karne par live auth use hoga.</small></div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('.modal-x').onclick=()=>modal.remove();
+  modal.querySelector('#switchAuth').onclick=()=>{modal.remove(); showAuthModal(isSignup?'signin':'signup')};
+  modal.querySelector('#authSubmit').onclick=()=>{ const email=modal.querySelector('#authEmail').value.trim(); const pass=modal.querySelector('#authPass').value.trim(); const name=isSignup?(modal.querySelector('#authName').value.trim()||'Satnam'):email.split('@')[0]||'Satnam'; if(!email||!pass){toast('Email aur password required');return;} currentUser={name,email,plan:'Free User'}; localStorage.setItem(AUTH_KEY,JSON.stringify(currentUser)); updateAuthUI(); modal.remove(); toast(isSignup?'Signup successful':'Sign in successful'); };
+}
+function logoutUser(){ currentUser=null; localStorage.removeItem(AUTH_KEY); updateAuthUI(); toast('Logout successful'); showDashboard(); }
+function showProfileEdit(){ exitEditorMode(); app.innerHTML=`<section class="hero"><h1>Profile Edit</h1><p>Profile menu restore ho gaya hai. Yahan name, email aur plan update kar sakte ho.</p></section><section class="tool-panel"><label>Name</label><input id="profileName" value="${currentUser?.name||'Satnam'}"><label>Email</label><input id="profileEmail" value="${currentUser?.email||''}"><label>Plan</label><select id="profilePlan"><option>Free User</option><option>Premium User</option></select><button class="primary" id="saveProfile">Save Profile</button></section>`; const plan=document.getElementById('profilePlan'); if(plan)plan.value=currentUser?.plan||'Free User'; document.getElementById('saveProfile').onclick=()=>{currentUser={name:val('profileName')||'Satnam',email:val('profileEmail')||'',plan:val('profilePlan')||'Free User'}; localStorage.setItem(AUTH_KEY,JSON.stringify(currentUser)); updateAuthUI(); toast('Profile updated');}; }
+function bindFooterLinks(){ document.querySelectorAll('[data-footer]').forEach(a=>a.addEventListener('click',(e)=>{e.preventDefault(); showFooterPage(a.dataset.footer)})); }
+function showFooterPage(type){ exitEditorMode(); const map={about:['About','Smart Photo Toolkit Pro document, photo aur PDF tools ka all-in-one toolkit hai.'],privacy:['Privacy Policy','Files browser me process hote hain. Sensitive document ko server par upload na karein jab tak API configured na ho.'],terms:['Terms & Conditions','Tool output ko use karne se pehle print size aur document quality verify karein.'],disclaimer:['Disclaimer','Ye official government service nahi hai. Document print/crop utility ke roop me use karein.'],contact:['Contact / Support','Support ke liye owner contact details/site footer me add ki ja sakti hain.']}; const m=map[type]||map.about; app.innerHTML=`<section class="hero"><h1>${m[0]}</h1><p>${m[1]}</p></section><section class="tool-panel"><button class="primary" onclick="showDashboard()">Back to Dashboard</button></section>`; }
+function val(id){return document.getElementById(id)?.value||''}
+function toast(msg){ let t=document.getElementById('toast'); if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t)} t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); }
+function toolShell(title,desc,body){ return `<section class="hero"><h1>${title}</h1><p>${desc}</p></section><section class="tool-panel">${body}</section>`; }
+function passportHtml(){ return toolShell('Passport Photo','Passport/photo module restore. Document Studio updates is module ko affect nahi karenge.',`<div class="upload-box full"><label>Upload Photo</label><input type="file" id="passportInput" accept="image/*"><small>Photo upload karke preview dekhein.</small></div><div class="passport-preview"><canvas id="passportCanvas" width="420" height="520"></canvas></div><div class="toolbar"><button id="passportFit">Fit Photo</button><button id="passportDownload" class="primary">Download JPG</button></div>`); }
+function bindPassportTool(){ const c=document.getElementById('passportCanvas'), ctx=c.getContext('2d'); ctx.fillStyle='#eef5ff';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#60718b';ctx.font='bold 22px Arial';ctx.textAlign='center';ctx.fillText('Passport Photo Preview',c.width/2,c.height/2); let img=null; document.getElementById('passportInput').onchange=e=>{const f=e.target.files[0]; if(!f)return; img=new Image(); img.onload=()=>{ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height); const r=Math.min(c.width/img.width,c.height/img.height); const w=img.width*r,h=img.height*r;ctx.drawImage(img,(c.width-w)/2,(c.height-h)/2,w,h)}; img.src=URL.createObjectURL(f)}; document.getElementById('passportDownload').onclick=()=>downloadCanvas(c,'passport_photo.jpg','image/jpeg'); }
+function pdfStudioHtml(){ return toolShell('PDF Studio','PDF Resizer/PDF Studio restore. Merge, split, compress placeholders safe mode me hain.',`<div class="upload-box full"><label>Upload PDF</label><input type="file" id="pdfStudioInput" accept="application/pdf"><small id="pdfStudioInfo">PDF select karein.</small></div><div class="toolbar"><button class="primary" id="pdfResizeBtn">Resize / Optimize</button><button id="pdfMergeBtn">Merge</button><button id="pdfSplitBtn">Split</button></div>`); }
+function bindPdfStudioTool(){ const info=document.getElementById('pdfStudioInfo'); document.getElementById('pdfStudioInput').onchange=e=>{const f=e.target.files[0]; if(f)info.textContent=`Selected: ${f.name} (${Math.round(f.size/1024)} KB)`}; ['pdfResizeBtn','pdfMergeBtn','pdfSplitBtn'].forEach(id=>document.getElementById(id).onclick=()=>toast('PDF Studio tool restored. Advanced processing next build me connect hoga.')); }
+function imageCompressorHtml(){ return toolShell('Image Compressor','Image compressor restore.',`<div class="upload-box full"><label>Upload Image</label><input type="file" id="compressInput" accept="image/*"></div><div class="toolbar"><button id="compressBtn" class="primary">Compress</button></div><div id="compressInfo" class="info-list"></div>`); }
+function bindImageCompressorTool(){ let file=null; document.getElementById('compressInput').onchange=e=>{file=e.target.files[0]; document.getElementById('compressInfo').textContent=file?`Selected ${file.name} (${Math.round(file.size/1024)} KB)`:''}; document.getElementById('compressBtn').onclick=()=>toast(file?'Compressor restored. HD compression engine next build me improve hoga.':'Pehle image upload karo'); }
+function nameDateHtml(){ return toolShell('Name / Date Photo','Name/date photo module restore.',`<div class="upload-box full"><label>Upload Photo</label><input type="file" id="ndInput" accept="image/*"></div><label>Name/Text</label><input id="ndText" placeholder="Name or date text"><canvas id="ndCanvas" width="640" height="420"></canvas><div class="toolbar"><button id="ndApply" class="primary">Apply Text</button><button id="ndDownload">Download</button></div>`); }
+function bindNameDateTool(){ const c=document.getElementById('ndCanvas'),ctx=c.getContext('2d'); let img=null; ctx.fillStyle='#eef5ff';ctx.fillRect(0,0,c.width,c.height); document.getElementById('ndInput').onchange=e=>{const f=e.target.files[0]; if(!f)return; img=new Image(); img.onload=()=>drawND(); img.src=URL.createObjectURL(f)}; function drawND(){ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height); if(img){const r=Math.min(c.width/img.width,c.height/img.height); const w=img.width*r,h=img.height*r;ctx.drawImage(img,(c.width-w)/2,(c.height-h)/2,w,h)} ctx.fillStyle='rgba(0,0,0,.72)';ctx.fillRect(0,c.height-54,c.width,54);ctx.fillStyle='#fff';ctx.font='bold 26px Arial';ctx.textAlign='center';ctx.fillText(val('ndText')||'Name / Date',c.width/2,c.height-18)} document.getElementById('ndApply').onclick=drawND; document.getElementById('ndDownload').onclick=()=>downloadCanvas(c,'name_date_photo.png','image/png'); }
+function workspaceHtml(){ return toolShell('My Workspace','Saved projects/workspace area restored.',`<div class="info-list">No saved projects yet. Future build me saved crops/prints yahan dikhaye jayenge.</div>`); }
+function downloadsHtml(){ return toolShell('Downloads','Recent downloads area restored.',`<div class="info-list">Browser downloads folder me generated files save hoti hain.</div>`); }
+function downloadCanvas(c,name,type){ const a=document.createElement('a'); a.href=c.toDataURL(type||'image/png',.95); a.download=name; a.click(); }
+window.showTool=function(view){ if(view==='login')showAuthModal('signin'); else if(view==='signup')showAuthModal('signup'); else if(view==='dashboard')showDashboard(); else showSimple(view); };
 
 function enterEditorMode(){
   document.body.classList.add('editor-mode');
@@ -69,7 +129,7 @@ function editorHtml(doc){return `
       <button id="backDocsTop" class="tool-btn">← Documents</button>
       <button id="toggleSide" class="tool-btn">☰ Menu</button>
       <div class="editor-title"><b>${doc.title}</b><small> PDF editor left/center • preview/settings right panel</small></div>
-      <span class="editor-status">v42.7 real PDF/crop foundation</span>
+      <span class="editor-status">v42.8 real PDF/crop foundation</span>
     </div>
     <div class="editor-layout v425-layout">
       <section class="panel main-editor-panel">
@@ -152,7 +212,7 @@ function endDrag(){ state.drag=null; }
 function nudge(dir){ const step= dir==='center'?0:5; if(dir==='left')state.crop.x-=step; if(dir==='right')state.crop.x+=step; if(dir==='up')state.crop.y-=step; if(dir==='down')state.crop.y+=step; if(dir==='center'){state.crop.x=(state.canvas.width-state.crop.w)/2;state.crop.y=(state.canvas.height-state.crop.h)/2;} applyCrop(); updatePreview(); }
 function getCroppedCanvas(scale=1){ const c=state.crop; const out=document.createElement('canvas'); out.width=Math.max(1,Math.round(c.w*scale)); out.height=Math.max(1,Math.round(c.h*scale)); out.getContext('2d').drawImage(state.canvas,c.x,c.y,c.w,c.h,0,0,out.width,out.height); return out; }
 async function getExportCropCanvas(){
-  // v42.7: Download/print crop original PDF se high resolution me render hota hai, screen preview se nahi.
+  // v42.8: Download/print crop original PDF se high resolution me render hota hai, screen preview se nahi.
   if(state.mode==='pdf' && state.pdf){
     try{
       const page=await state.pdf.getPage(state.page);

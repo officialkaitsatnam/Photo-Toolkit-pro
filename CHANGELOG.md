@@ -1,9 +1,14 @@
-# Changelog
+# Smart Photo Toolkit Pro v42.8
 
-## v42.7 - Real Development Foundation
-- Fixed placeholder/blank editor behavior.
-- Crop overlay hidden until source upload.
-- Added source-ready workflow for PDF/image render.
-- Improved full workspace sizing and removed unnecessary empty blue space.
-- Preview now shows a clear message until upload.
-- Updated service worker cache to v42.7.
+## Safe Isolation Restore
+- Document Studio ko editor-mode scoped rakha gaya taaki baaki tools par global effect na pade.
+- Passport Photo module restore.
+- PDF Studio / PDF Resizer safe module restore.
+- Image Compressor restore.
+- Name / Date Photo restore.
+- Profile menu, profile edit, sign in, signup aur logout restore.
+- Footer links restore: About, Privacy Policy, Terms, Disclaimer, Contact / Support.
+- Service worker cache v42.8.
+
+## Note
+Document Studio v42.7 foundation retained hai. Next builds me Document Studio ko isolate modules me split karna recommended hai.

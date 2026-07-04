@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart Photo Toolkit Pro v42.7</title>
+  <title>Smart Photo Toolkit Pro v42.8</title>
   <meta name="description" content="Full-screen Document Studio Pro with PDF crop, A4 print and lamination layout." />
-  <link rel="stylesheet" href="main.css?v=42.7-real-development-foundation" />
+  <link rel="stylesheet" href="main.css?v=42.8-safe-isolation-restore" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#06142f" />
   <link rel="icon" href="icon-192.png" />
@@ -13,11 +13,25 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <div id="loader" class="loader"><div class="spinner"></div><b>Smart Photo Toolkit Pro</b><span>v42.7 Full Editor Print Engine</span></div>
+  <div id="loader" class="loader"><div class="spinner"></div><b>Smart Photo Toolkit Pro</b><span>v42.8 Full Editor Print Engine</span></div>
   <header class="topbar">
     <button class="mobile-menu" id="menuBtn">☰</button>
     <div class="brand"><span class="logo">📸</span><strong>Smart Photo Toolkit</strong><span class="badge">Pro</span></div>
-    <div class="top-actions"><button class="premium">👑 Premium</button><button class="bell">🔔<i>3</i></button><div class="avatar">S</div><div class="user"><b>Satnam</b><small>Premium User</small></div></div>
+    <div class="top-actions">
+      <button class="premium" data-auth-action="premium">👑 Premium</button>
+      <button class="bell">🔔<i>3</i></button>
+      <button class="auth-btn" id="signinBtn">Sign in</button>
+      <button class="auth-btn outline" id="signupBtn">Signup</button>
+      <div class="profile-wrap" id="profileWrap">
+        <button class="profile-trigger" id="profileTrigger"><span class="avatar" id="avatarText">S</span><span class="user"><b id="userNameTop">Satnam</b><small id="userPlanTop">Premium User</small></span>⌄</button>
+        <div class="profile-menu" id="profileMenu">
+          <button data-profile="edit">✏️ Edit Profile</button>
+          <button data-profile="workspace">📁 My Workspace</button>
+          <button data-profile="downloads">⇩ Downloads</button>
+          <button data-profile="logout">🚪 Logout</button>
+        </div>
+      </div>
+    </div>
   </header>
   <div class="shell">
     <aside class="sidebar" id="sidebar">
@@ -33,6 +47,16 @@
     </aside>
     <main id="app" class="app"></main>
   </div>
-  <script src="main.js?v=42.7-real-development-foundation"></script>
+  <footer class="site-footer" id="siteFooter">
+    <div><b>Smart Photo Toolkit Pro</b><span>Document Studio • Passport Photo • PDF Tools</span></div>
+    <nav>
+      <a href="#" data-footer="about">About</a>
+      <a href="#" data-footer="privacy">Privacy Policy</a>
+      <a href="#" data-footer="terms">Terms</a>
+      <a href="#" data-footer="disclaimer">Disclaimer</a>
+      <a href="#" data-footer="contact">Contact / Support</a>
+    </nav>
+  </footer>
+  <script src="main.js?v=42.8-safe-isolation-restore"></script>
 </body>
 </html>
