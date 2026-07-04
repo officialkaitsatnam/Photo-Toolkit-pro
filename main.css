@@ -50,3 +50,19 @@ body.editor-mode .compact-tip{
   body.editor-mode .main-editor-panel .stage-wrap{min-height:74vh;max-height:84vh;padding:6px;}
   body.editor-mode .panel.main-editor-panel{padding:8px;}
 }
+
+/* v42.7 Real Development Foundation: stable workspace + PDF-first editor */
+.editor-layout.v425-layout{grid-template-columns:minmax(620px,1fr) 360px;align-items:start;gap:16px}
+.main-editor-panel{padding:14px;min-height:calc(100vh - 140px);display:flex;flex-direction:column}
+.editor-work-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.editor-work-head h2{margin:0}.editor-work-head small{color:var(--muted);font-weight:700}.quick-actions{display:flex;gap:8px;flex-wrap:wrap}.quick-actions button{border:0;border-radius:10px;padding:10px 14px;font-weight:900}.editor-toolbar{position:sticky;top:76px;z-index:12;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;margin:8px 0 10px}
+.stage-wrap{flex:1;min-height:520px;max-height:none;background:#07152f;border-radius:18px;padding:12px;display:flex;align-items:flex-start;justify-content:center;overflow:auto;overscroll-behavior:contain}
+.stage{box-shadow:0 8px 30px rgba(0,0,0,.28);transform-origin:top center}
+.stage.empty-stage{width:100%!important;min-height:520px!important;display:grid;place-items:center;background:linear-gradient(180deg,#eef5ff,#dceafe)!important;box-shadow:none}
+.stage.empty-stage canvas{display:none}.stage.empty-stage .crop-box{display:none!important}.stage.empty-stage:after{content:'Upload official PDF from right panel to start editing';font-size:22px;font-weight:900;color:#52627a;text-align:center;padding:20px}
+.crop-box.source-not-ready{display:none!important}
+.right-control-panel{display:flex;flex-direction:column;gap:12px}.right-control-panel>.panel{margin:0;box-shadow:0 8px 24px rgba(15,35,75,.08)}
+.upload-row.side-upload-row{grid-template-columns:1fr;gap:10px}.upload-box input{font-size:13px}.sticky-preview{position:sticky;top:88px}.preview-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.preview-actions button{border:0;border-radius:10px;padding:10px;font-weight:900}.a4-preview canvas{max-width:210px}.tip.compact-tip{margin-top:10px;padding:10px;font-size:13px}
+body.editor-mode .sidebar{width:0!important;padding:0!important;border:0!important;overflow:hidden!important}body.editor-mode .app{padding:12px 12px 20px}.editor-status{background:#eaf3ff;color:#1769ff;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:900}.editor-top{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;display:flex;align-items:center;gap:10px;margin-bottom:10px;box-shadow:0 8px 24px rgba(15,35,75,.08)}.editor-title{display:flex;flex-direction:column;gap:2px;margin-right:auto}.editor-title small{color:#65758b;font-weight:700}
+@media(max-width:900px){.editor-layout.v425-layout{grid-template-columns:1fr}.main-editor-panel{min-height:auto}.stage-wrap{min-height:520px}.right-control-panel{order:2}.sticky-preview{position:static}.editor-work-head{align-items:flex-start}.quick-actions{justify-content:flex-end}.editor-toolbar{top:65px}.a4-preview canvas{max-width:190px}}
+@media(max-width:560px){body.editor-mode .app{padding:8px}.editor-top{position:sticky;top:74px;z-index:20;overflow:auto}.editor-status{display:none}.editor-layout.v425-layout{gap:10px}.stage-wrap{min-height:540px;padding:8px;border-radius:14px;justify-content:flex-start}.stage.empty-stage{min-height:540px!important}.stage.empty-stage:after{font-size:17px}.toolbar{gap:6px}.toolbar button,.toolbar select{font-size:13px;padding:8px}.quick-actions button{padding:9px 11px}.main-editor-panel{padding:10px}.right-control-panel .panel{padding:12px}.crop-box:before{font-size:10px;top:-22px}.move-label{font-size:10px!important}}

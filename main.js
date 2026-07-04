@@ -1,7 +1,7 @@
-/* Smart Photo Toolkit Pro v42.6 - HD Export + Workspace Fix */
+/* Smart Photo Toolkit Pro v42.7 - Real Development Foundation */
 'use strict';
 
-const VERSION = 'v42.6-HD-Export-Workspace-Fix';
+const VERSION = 'v42.7-Real-Development-Foundation';
 const DOCS = [
   {id:'aadhaar', title:'Aadhaar Card', img:'aadhaar.jpg', desc:'Official PDF crop + 85.6 × 54 mm printable'},
   {id:'pan', title:'PAN Card', img:'pan.jpg', desc:'PAN printable crop and A4 output'},
@@ -56,7 +56,7 @@ function openEditor(docId){
   state = {
     doc, mode:'pdf', pdf:null, page:1, totalPages:1, zoom:1.15, rotation:0,
     frontImg:null, backImg:null, activeImage:'front', topGap:2.2, printLayout:'lamination',
-    crop:{x:40,y:40,w:360,h:240}, drag:null, canvas:null, ctx:null, previewCanvas:null
+    crop:{x:40,y:40,w:360,h:240}, drag:null, canvas:null, ctx:null, previewCanvas:null, hasSource:false
   };
   app.innerHTML = editorHtml(doc);
   bindEditor();
@@ -69,7 +69,7 @@ function editorHtml(doc){return `
       <button id="backDocsTop" class="tool-btn">← Documents</button>
       <button id="toggleSide" class="tool-btn">☰ Menu</button>
       <div class="editor-title"><b>${doc.title}</b><small> PDF editor left/center • preview/settings right panel</small></div>
-      <span class="editor-status">v42.6 HD export + workspace fix</span>
+      <span class="editor-status">v42.7 real PDF/crop foundation</span>
     </div>
     <div class="editor-layout v425-layout">
       <section class="panel main-editor-panel">
@@ -123,14 +123,26 @@ function bindEditor(){
 async function loadPdfFile(e){ const file=e.target.files[0]; if(!file)return; state.mode='pdf'; document.getElementById('modeSelect').value='pdf'; const buf=await file.arrayBuffer(); state.pdf=await pdfjsLib.getDocument({data:buf}).promise; state.totalPages=state.pdf.numPages; const sel=document.getElementById('pageSelect'); sel.innerHTML=Array.from({length:state.totalPages},(_,i)=>`<option value="${i+1}">Page ${i+1} / ${state.totalPages}</option>`).join(''); state.page=1; await renderPdfPage(true); setTimeout(()=>{ try{fitWidth()}catch(e){} },80); }
 function loadImageFile(e,slot){ const file=e.target.files[0]; if(!file)return; const img=new Image(); img.onload=()=>{ if(slot==='front'){state.frontImg=img;state.activeImage='front'} else {state.backImg=img;state.activeImage='back'} state.mode='images'; document.getElementById('modeSelect').value='images'; renderImage(img,true);}; img.src=URL.createObjectURL(file); }
 function renderCurrent(){ if(state.mode==='pdf' && state.pdf) renderPdfPage(); else if(state.mode==='images' && (state.frontImg||state.backImg)) renderImage(state.frontImg||state.backImg); else drawBlankStage(); }
-async function renderPdfPage(reset=false){ if(!state.pdf){drawBlankStage();return;} const page=await state.pdf.getPage(state.page); const viewport=page.getViewport({scale:state.zoom, rotation:state.rotation}); state.canvas.width=Math.round(viewport.width); state.canvas.height=Math.round(viewport.height); await page.render({canvasContext:state.ctx, viewport}).promise; syncStageSize(); if(reset) resetCrop(); else applyCrop(); updateZoomLabel(); updatePreview(); }
-function renderImage(img, reset=false){ const maxW=1400; const sc=state.zoom*Math.min(1,maxW/img.width); state.canvas.width=Math.round(img.width*sc); state.canvas.height=Math.round(img.height*sc); state.ctx.fillStyle='#fff';state.ctx.fillRect(0,0,state.canvas.width,state.canvas.height); if(state.rotation){ state.ctx.save(); state.ctx.translate(state.canvas.width/2,state.canvas.height/2); state.ctx.rotate(state.rotation*Math.PI/180); state.ctx.drawImage(img,-state.canvas.width/2,-state.canvas.height/2,state.canvas.width,state.canvas.height); state.ctx.restore(); } else state.ctx.drawImage(img,0,0,state.canvas.width,state.canvas.height); syncStageSize(); if(reset) resetCrop(); else applyCrop(); updateZoomLabel(); updatePreview(); }
-function drawBlankStage(){ state.canvas.width=980; state.canvas.height=680; state.ctx.fillStyle='#fff'; state.ctx.fillRect(0,0,980,680); state.ctx.fillStyle='#eaf1fb'; state.ctx.fillRect(80,80,820,500); state.ctx.fillStyle='#53647d'; state.ctx.font='bold 24px Arial'; state.ctx.textAlign='center'; state.ctx.fillText('Upload official PDF or front/back image',490,330); syncStageSize(); resetCrop(); }
-function syncStageSize(){ const st=document.getElementById('stage'); st.style.width=state.canvas.width+'px'; st.style.height=state.canvas.height+'px'; }
+async function renderPdfPage(reset=false){ if(!state.pdf){drawBlankStage();return;} const page=await state.pdf.getPage(state.page); const viewport=page.getViewport({scale:state.zoom, rotation:state.rotation}); state.canvas.width=Math.round(viewport.width); state.canvas.height=Math.round(viewport.height); await page.render({canvasContext:state.ctx, viewport}).promise; markSourceReady(); syncStageSize(); if(reset) resetCrop(); else applyCrop(); updateZoomLabel(); updatePreview(); }
+function renderImage(img, reset=false){ const maxW=1400; const sc=state.zoom*Math.min(1,maxW/img.width); state.canvas.width=Math.round(img.width*sc); state.canvas.height=Math.round(img.height*sc); state.ctx.fillStyle='#fff';state.ctx.fillRect(0,0,state.canvas.width,state.canvas.height); if(state.rotation){ state.ctx.save(); state.ctx.translate(state.canvas.width/2,state.canvas.height/2); state.ctx.rotate(state.rotation*Math.PI/180); state.ctx.drawImage(img,-state.canvas.width/2,-state.canvas.height/2,state.canvas.width,state.canvas.height); state.ctx.restore(); } else state.ctx.drawImage(img,0,0,state.canvas.width,state.canvas.height); markSourceReady(); syncStageSize(); if(reset) resetCrop(); else applyCrop(); updateZoomLabel(); updatePreview(); }
+function drawBlankStage(){
+  state.hasSource=false;
+  state.canvas.width=1; state.canvas.height=1;
+  const st=document.getElementById('stage');
+  st.classList.add('empty-stage');
+  const box=document.getElementById('cropBox'); if(box) box.classList.add('source-not-ready');
+  syncStageSize(); updateZoomLabel(); updateInfo(); updatePreview();
+}
+function markSourceReady(){
+  state.hasSource=true;
+  document.getElementById('stage')?.classList.remove('empty-stage');
+  document.getElementById('cropBox')?.classList.remove('source-not-ready');
+}
+function syncStageSize(){ const st=document.getElementById('stage'); st.style.width=state.hasSource?state.canvas.width+'px':'100%'; st.style.height=state.hasSource?state.canvas.height+'px':'auto'; }
 function updateZoomLabel(){ document.getElementById('zoomLabel').textContent=Math.round(state.zoom*100)+'%'; }
 function resetCrop(){ const w=state.canvas.width,h=state.canvas.height; state.crop={x:Math.round(w*.08),y:Math.round(h*.08),w:Math.round(w*.84),h:Math.round(h*.55)}; applyCrop(); updatePreview(); }
 function autoCrop(){ const w=state.canvas.width,h=state.canvas.height; state.crop={x:Math.round(w*.1),y:Math.round(h*.18),w:Math.round(w*.8),h:Math.round(h*.48)}; applyCrop(); updatePreview(); }
-function fitWidth(){ const wrap=document.getElementById('stageWrap'); const target=Math.max(520, wrap.clientWidth-24); const natural=state.canvas.width/state.zoom; if(natural>0){state.zoom=target/natural; renderCurrent();} }
+function fitWidth(){ const wrap=document.getElementById('stageWrap'); const target=Math.max(300, wrap.clientWidth-24); const natural=state.canvas.width/state.zoom; if(natural>0){state.zoom=target/natural; renderCurrent();} }
 function applyCrop(){ const c=clampCrop(state.crop); state.crop=c; const box=document.getElementById('cropBox'); box.style.left=c.x+'px';box.style.top=c.y+'px';box.style.width=c.w+'px';box.style.height=c.h+'px'; updateInfo(); }
 function clampCrop(c){ const min=36,W=state.canvas.width,H=state.canvas.height; c.x=Math.max(0,Math.min(c.x,W-min)); c.y=Math.max(0,Math.min(c.y,H-min)); c.w=Math.max(min,Math.min(c.w,W-c.x)); c.h=Math.max(min,Math.min(c.h,H-c.y)); return c; }
 function setupCropEvents(){ const box=document.getElementById('cropBox'); box.addEventListener('pointerdown', startDrag); box.querySelectorAll('.handle').forEach(h=>h.addEventListener('pointerdown', startDrag)); window.addEventListener('pointermove', moveDrag); window.addEventListener('pointerup', endDrag); }
@@ -140,7 +152,7 @@ function endDrag(){ state.drag=null; }
 function nudge(dir){ const step= dir==='center'?0:5; if(dir==='left')state.crop.x-=step; if(dir==='right')state.crop.x+=step; if(dir==='up')state.crop.y-=step; if(dir==='down')state.crop.y+=step; if(dir==='center'){state.crop.x=(state.canvas.width-state.crop.w)/2;state.crop.y=(state.canvas.height-state.crop.h)/2;} applyCrop(); updatePreview(); }
 function getCroppedCanvas(scale=1){ const c=state.crop; const out=document.createElement('canvas'); out.width=Math.max(1,Math.round(c.w*scale)); out.height=Math.max(1,Math.round(c.h*scale)); out.getContext('2d').drawImage(state.canvas,c.x,c.y,c.w,c.h,0,0,out.width,out.height); return out; }
 async function getExportCropCanvas(){
-  // v42.6: Download/print crop original PDF se high resolution me render hota hai, screen preview se nahi.
+  // v42.7: Download/print crop original PDF se high resolution me render hota hai, screen preview se nahi.
   if(state.mode==='pdf' && state.pdf){
     try{
       const page=await state.pdf.getPage(state.page);
@@ -202,6 +214,7 @@ function updatePreview(){
   if(!state?.previewCanvas)return; const p=state.previewCanvas, ctx=p.getContext('2d');
   ctx.clearRect(0,0,p.width,p.height); ctx.fillStyle='#fff'; ctx.fillRect(0,0,p.width,p.height);
   const scale=p.width/A4.w; const top=state.topGap*scale; ctx.strokeStyle='#111'; ctx.lineWidth=1; ctx.strokeRect(0,0,p.width,p.height); drawTopGuide(ctx,scale,top,p.width);
+  if(!state.hasSource){ ctx.fillStyle='#60718b'; ctx.font='bold 28px Arial'; ctx.textAlign='center'; ctx.fillText('A4 preview will appear after upload', p.width/2, p.height*.35); return; }
   const crop=getCroppedCanvas();
   if(state.mode==='images' && state.frontImg && state.backImg){
     drawCard(ctx,crop,20*scale,top,CARD.w*scale,CARD.h*scale,'FRONT'); drawCard(ctx,crop,(20+CARD.w+8)*scale,top,CARD.w*scale,CARD.h*scale,'BACK');
@@ -211,6 +224,7 @@ function updatePreview(){
 }
 function drawCard(ctx,img,x,y,w,h,label){ ctx.save(); ctx.strokeStyle='#111';ctx.lineWidth=1; ctx.strokeRect(x,y,w,h); ctx.drawImage(img,x,y,w,h); ctx.fillStyle='#111';ctx.font='bold 8px Arial';ctx.textAlign='center';ctx.fillText(label,x+w/2,y+h+14); ctx.restore(); }
 async function makeA4Canvas(){
+  if(!state.hasSource){ alert('Pehle PDF ya image upload karo.'); throw new Error('No source uploaded'); }
   const out=document.createElement('canvas'); out.width=2480; out.height=3508; const ctx=out.getContext('2d');
   ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
   ctx.fillStyle='#fff';ctx.fillRect(0,0,out.width,out.height); const s=out.width/A4.w, top=state.topGap*s; const crop=await getExportCropCanvas();
@@ -222,5 +236,5 @@ async function makeA4Canvas(){
   }
   drawTopGuide(ctx,s,top,out.width); return out;
 }
-async function downloadPdf(){ const {jsPDF}=window.jspdf; const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:false}); const a4=await makeA4Canvas(); pdf.addImage(a4.toDataURL('image/png'),'PNG',0,0,210,297,undefined,'FAST'); pdf.save(`SmartPhotoToolkit_${state.doc.id}_A4_Print_${VERSION}.pdf`); }
-async function printOutput(){ const a4=await makeA4Canvas(); const data=a4.toDataURL('image/png'); const w=window.open('','_blank'); w.document.write(`<!doctype html><html><head><title>Print ${state.doc.title}</title><style>@page{size:A4 portrait;margin:0}html,body{margin:0;background:#fff}.page{width:210mm;height:297mm}img{width:210mm;height:297mm;display:block}</style></head><body><div class="page"><img src="${data}"></div><script>window.onload=()=>{setTimeout(()=>window.print(),350)}<\/script></body></html>`); w.document.close(); }
+async function downloadPdf(){ if(!state.hasSource){ alert('Pehle PDF ya image upload karo.'); return; } const {jsPDF}=window.jspdf; const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:false}); const a4=await makeA4Canvas(); pdf.addImage(a4.toDataURL('image/png'),'PNG',0,0,210,297,undefined,'FAST'); pdf.save(`SmartPhotoToolkit_${state.doc.id}_A4_Print_${VERSION}.pdf`); }
+async function printOutput(){ if(!state.hasSource){ alert('Pehle PDF ya image upload karo.'); return; } const a4=await makeA4Canvas(); const data=a4.toDataURL('image/png'); const w=window.open('','_blank'); w.document.write(`<!doctype html><html><head><title>Print ${state.doc.title}</title><style>@page{size:A4 portrait;margin:0}html,body{margin:0;background:#fff}.page{width:210mm;height:297mm}img{width:210mm;height:297mm;display:block}</style></head><body><div class="page"><img src="${data}"></div><script>window.onload=()=>{setTimeout(()=>window.print(),350)}<\/script></body></html>`); w.document.close(); }

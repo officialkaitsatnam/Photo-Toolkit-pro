@@ -1,7 +1,7 @@
-# Update Guide v42.6
+# v42.7 Update Guide
 
-Upload all files from this ZIP to the root of your GitHub repository.
-
-After upload, hard refresh the GitHub Pages site.
-
-Test: Document Studio → Aadhaar → upload PDF → crop → Download PDF.
+1. Extract ZIP.
+2. Upload the extracted files directly to GitHub repository root, not inside another folder.
+3. Commit changes.
+4. Wait for GitHub Pages deployment.
+5. Open the website with `?v=42.7` once or clear browser cache if old UI appears.

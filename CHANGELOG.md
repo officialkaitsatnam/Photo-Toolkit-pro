@@ -1,8 +1,9 @@
 # Changelog
 
-## v42.6 - HD Export + Workspace Fix
-- Added high-quality PDF export crop from original PDF page.
-- Changed PDF download image from JPEG to PNG for sharper output.
-- Auto-fit PDF workspace after upload.
-- Reduced unused blue/empty area under document editor.
-- Retained v42.5 layout redesign and v42.4 print engine.
+## v42.7 - Real Development Foundation
+- Fixed placeholder/blank editor behavior.
+- Crop overlay hidden until source upload.
+- Added source-ready workflow for PDF/image render.
+- Improved full workspace sizing and removed unnecessary empty blue space.
+- Preview now shows a clear message until upload.
+- Updated service worker cache to v42.7.
