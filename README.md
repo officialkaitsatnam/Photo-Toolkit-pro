@@ -1,18 +1,14 @@
-# Smart Photo Toolkit Pro v42.1
+# Smart Photo Toolkit Pro v42.0
 
-GitHub-ready build for **Real Document Studio Pro**.
+GitHub-ready build for **Document Studio Pro A4 Crop Fix**.
 
 ## Main update
-- 6 Document Studio cards: Aadhaar, PAN, Voter, DL, ABHA, Ayushman.
-- Official PDF upload with PDF.js rendering.
-- Page selector for multi-page PDFs.
-- Professional crop box with 8 handles: 4 corner dots + 4 side handles using `|` / `=` style.
-- Crop area can move from center and resize from all sides.
-- Zoom in, zoom out, fit width, rotate left/right, reset crop and auto crop.
-- PDF mode prints **single selected printable area only**.
-- Front/back mode is only used when front/back image files are uploaded.
-- Real A4 PDF output with 2.2 mm top center gap.
-- Fold + lamination guide layout.
+Document Studio now opens six document boxes. On selecting a document, a full professional editor opens with PDF upload, page select, zoom, free 8-side crop, A4 preview, PDF download and print.
 
-## Upload rule
-Upload files directly in repository root. `index.html`, `main.css`, and `main.js` must be visible in root.
+## Print rule
+- Official full PDF upload = single selected printable area only.
+- Front/Back layout = only when front/back images are uploaded.
+- Output PDF = A4 portrait, 85.6 × 54 mm card size, 2.2 mm top margin, centered.
+
+## Files to upload to GitHub
+Upload the full contents of this ZIP to your GitHub Pages repository.
