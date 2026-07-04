@@ -1,8 +1,8 @@
 # Changelog
 
-## v42.5 - Document Studio UX Redesign
-- Reworked editor layout: PDF editor is now primary workspace.
-- Shifted Official PDF upload, Front/Back upload, Live A4 Preview and settings to right panel.
-- Added side-panel Download/Print buttons.
-- Improved mobile ordering so PDF editor opens first.
-- Retained v42.4 A4 print calibration and 2.2 mm top gap.
+## v42.6 - HD Export + Workspace Fix
+- Added high-quality PDF export crop from original PDF page.
+- Changed PDF download image from JPEG to PNG for sharper output.
+- Auto-fit PDF workspace after upload.
+- Reduced unused blue/empty area under document editor.
+- Retained v42.5 layout redesign and v42.4 print engine.

@@ -14,7 +14,7 @@ body.editor-mode .app{padding:10px;height:calc(100vh - 58px);overflow:hidden}
 @media(max-width:900px){body.editor-mode{overflow:auto}body.editor-mode .app{height:auto;overflow:visible}body.editor-mode .editor-layout{grid-template-columns:1fr}.editor-status{display:none}body.editor-mode .settings{height:auto;overflow:visible}body.editor-mode .stage-wrap{min-height:58vh;max-height:70vh}.editor-top{position:sticky;top:60px;z-index:25}.editor-top .tool-btn{padding:8px 9px}.editor-top b{font-size:14px}.editor-top small{display:none}}
 
 /* v42.5 Document Studio UX Redesign: PDF editor main area, preview/settings right side */
-body.editor-mode .brand strong::after{content:' v42.5';font-size:12px;margin-left:8px;color:#9fc2ff}
+body.editor-mode .brand strong::after{content:' v42.6';font-size:12px;margin-left:8px;color:#9fc2ff}
 body.editor-mode .v425-layout{grid-template-columns:minmax(0,1fr) 360px;gap:12px;align-items:stretch}
 .main-editor-panel{order:1;display:flex;flex-direction:column;min-width:0;background:#fdfefe}
 .right-control-panel{order:2;min-width:0;height:100%;overflow:auto;display:flex;flex-direction:column;gap:10px}
@@ -22,3 +22,31 @@ body.editor-mode .v425-layout{grid-template-columns:minmax(0,1fr) 360px;gap:12px
 @media(max-width:1100px){body.editor-mode .v425-layout{grid-template-columns:minmax(0,1fr) 320px}.right-control-panel .a4-preview canvas{max-width:205px}}
 @media(max-width:900px){body.editor-mode .v425-layout{display:flex;flex-direction:column}.main-editor-panel{order:1}.right-control-panel{order:2;height:auto;overflow:visible}.right-control-panel .sticky-preview{position:relative}.right-control-panel .a4-preview canvas{max-width:240px}.editor-work-head{align-items:flex-start;flex-direction:column}.quick-actions{width:100%}.quick-actions button{flex:1}.main-editor-panel .stage-wrap{min-height:62vh;max-height:72vh}.settings{order:2!important}}
 @media(max-width:560px){body.editor-mode .app{padding:6px}.editor-top{gap:6px;padding:8px}.editor-top .editor-title small,.editor-status{display:none}.editor-toolbar{overflow:auto;flex-wrap:nowrap}.editor-toolbar button,.editor-toolbar select{white-space:nowrap}.right-control-panel .panel{padding:10px}.preview-actions{grid-template-columns:1fr}.main-editor-panel .stage-wrap{min-height:60vh}}
+
+
+/* v42.6 HD Export + Workspace Fix */
+body.editor-mode .stage-wrap{
+  background:#f7fbff;
+  border:1px solid #dbe8fb;
+  padding:8px;
+  align-items:flex-start;
+}
+body.editor-mode .stage{
+  margin:0 auto;
+  box-shadow:0 10px 34px rgba(10,30,70,.18);
+}
+body.editor-mode .main-editor-panel{
+  padding-bottom:6px;
+}
+body.editor-mode .compact-tip{
+  margin-top:6px;
+  padding:7px 10px;
+}
+@media(max-width:900px){
+  body.editor-mode .main-editor-panel .stage-wrap{min-height:72vh;max-height:82vh;}
+  body.editor-mode .right-control-panel{margin-top:6px;}
+}
+@media(max-width:560px){
+  body.editor-mode .main-editor-panel .stage-wrap{min-height:74vh;max-height:84vh;padding:6px;}
+  body.editor-mode .panel.main-editor-panel{padding:8px;}
+}

@@ -1,12 +1,13 @@
-# Smart Photo Toolkit Pro v42.5
+# Smart Photo Toolkit Pro v42.6
 
-Document Studio UX Redesign build.
+GitHub-ready build for **HD Export + Workspace Fix**.
 
-## Main changes
-- PDF edit/crop workspace moved to the large left/center area.
-- Upload controls, Live A4 Preview and print settings moved to the right panel.
-- Document select opens full editor mode and left menu auto-collapses.
-- Mobile layout now shows the PDF editor first; preview/settings appear below.
-- A4 print engine from v42.4 retained: 2.2 mm top gap, lamination layout, print/download flow.
+## Main fixes
+- Download/Print now uses high-resolution PDF render instead of low-resolution screen preview.
+- Export canvas uses PNG/300-DPI-style A4 canvas for sharper QR/text.
+- PDF workspace auto-fit after upload.
+- Blue empty editor area reduced; PDF editor gets more usable height.
+- v42.5 right-panel layout retained.
 
-Upload all files in repository root on GitHub Pages.
+## Print rule
+Use browser/printer setting: **Actual size / 100%**, margins **None**.
