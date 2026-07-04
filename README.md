@@ -1,25 +1,12 @@
-# Smart Photo Toolkit Pro v42.4
+# Smart Photo Toolkit Pro v42.5
 
-## Real Document Studio Pro
+Document Studio UX Redesign build.
 
-This build focuses on the Document Studio workflow requested by Satnam Kait.
+## Main changes
+- PDF edit/crop workspace moved to the large left/center area.
+- Upload controls, Live A4 Preview and print settings moved to the right panel.
+- Document select opens full editor mode and left menu auto-collapses.
+- Mobile layout now shows the PDF editor first; preview/settings appear below.
+- A4 print engine from v42.4 retained: 2.2 mm top gap, lamination layout, print/download flow.
 
-### Added in v42.4
-- Document select → full dashboard editor mode.
-- Left menu auto-collapse.
-- Manual menu reopen from editor toolbar.
-- PDF uses maximum workspace area.
-- Zoom range improved from 25% to 800%.
-- A4 preview, PDF download and print use the same mm-based layout function.
-- Print layout selector:
-  - Aadhaar Lamination Strip 171.2 × 54 mm
-  - Single Card 85.6 × 54 mm
-  - Fit selected area to A4 width
-- 2.2 mm top margin retained.
-- Crop overlay improved with 8 handles + side handles + rule guide.
-
-### Printing
-For best results, print with:
-- Scale: 100% / Actual size
-- Margins: None
-- Paper: A4
+Upload all files in repository root on GitHub Pages.

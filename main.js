@@ -1,7 +1,7 @@
-/* Smart Photo Toolkit Pro v42.4 - Full Editor + Real A4 Print Engine */
+/* Smart Photo Toolkit Pro v42.5 - Document Studio UX Redesign */
 'use strict';
 
-const VERSION = 'v42.4-Full-Editor-Real-A4-Print';
+const VERSION = 'v42.5-Document-Studio-UX-Redesign';
 const DOCS = [
   {id:'aadhaar', title:'Aadhaar Card', img:'aadhaar.jpg', desc:'Official PDF crop + 85.6 × 54 mm printable'},
   {id:'pan', title:'PAN Card', img:'pan.jpg', desc:'PAN printable crop and A4 output'},
@@ -64,30 +64,35 @@ function openEditor(docId){
   updatePreview();
 }
 function editorHtml(doc){return `
-  <div class="editor-shell"><div class="editor-top no-print"><button id="backDocsTop" class="tool-btn">← Documents</button><button id="toggleSide" class="tool-btn">☰ Menu</button><div><b>${doc.title}</b><small> Full-screen Document Studio Pro</small></div><span class="editor-status">PDF maximum workspace active</span></div>
-  <div class="editor-layout">
-    <section class="panel">
-      <h2>${doc.title} PDF – Crop & Printable</h2>
-      <div class="steps"><div class="step active">1 Upload</div><div class="step active">2 Select Page</div><div class="step active">3 Crop Area</div><div class="step">4 Preview & Print</div></div>
-      <div class="upload-row">
-        <div class="upload-box"><label>Official Full PDF Upload</label><input type="file" id="pdfFile" accept="application/pdf"><small>PDF mode me single selected printable area output hoga.</small></div>
-        <div class="upload-box"><label>Front / Back Image Upload</label><input type="file" id="frontFile" accept="image/*"><input type="file" id="backFile" accept="image/*" style="margin-top:8px"><small>Front+Back layout sirf image mode me aayega.</small></div>
-      </div>
-      <div class="toolbar no-print">
-        <select id="pageSelect"><option value="1">Page 1</option></select>
-        <button id="zoomOut">−</button><b id="zoomLabel">115%</b><button id="zoomIn">+</button>
-        <button id="fitBtn">⛶ Fit Width</button><button id="rotL">↶ Rotate Left</button><button id="rotR">↷ Rotate Right</button><button id="resetCrop">Reset Crop</button><button id="autoCrop">Auto Crop</button>
-      </div>
-      <div class="stage-wrap" id="stageWrap"><div class="stage" id="stage"><canvas id="sourceCanvas"></canvas><div class="crop-box" id="cropBox"><span class="handle h-nw" data-h="nw"></span><span class="handle h-n" data-h="n"></span><span class="handle h-ne" data-h="ne"></span><span class="handle h-e" data-h="e"></span><span class="handle h-se" data-h="se"></span><span class="handle h-s" data-h="s"></span><span class="handle h-sw" data-h="sw"></span><span class="handle h-w" data-h="w"></span><div class="move-label">✥<br>DRAG<br>MOVE</div></div></div></div>
-      <div class="tip">Tip: blue corner dots resize karte hain. Side ke “|” handles width/height adjust karte hain. Beech se drag karke crop area move karo. Zoom se PDF bada karke accurate crop karo.</div>
-      <div class="actions no-print"><button class="primary" id="downloadPdf">⇩ Download PDF</button><button class="success" id="printBtn">🖨 Print</button><button id="backDocs">← Back to Documents</button></div>
-    </section>
-    <aside class="settings">
-      <div class="panel"><h3>Crop Settings</h3><label>Top Margin / Center Gap (mm)</label><input id="topGap" type="number" step="0.1" value="2.2"><label>Output Size</label><select id="outputSize"><option>A4 (210 × 297 mm)</option></select><label>Print Layout</label><select id="printLayout"><option value="lamination">Aadhaar Lamination Strip 171.2 × 54 mm</option><option value="single">Single Card 85.6 × 54 mm</option><option value="fit">Fit Selected Area to A4 Width</option></select><label>Mode</label><select id="modeSelect"><option value="pdf">Official PDF Single Area</option><option value="images">Front + Back Images</option></select><label>Crop Position</label><div class="nudge"><span></span><button data-move="up">↑</button><span></span><button data-move="left">←</button><button data-move="center">●</button><button data-move="right">→</button><span></span><button data-move="down">↓</button><span></span></div><div class="info-list" id="cropInfo"></div></div>
-      <div class="panel preview-card"><h3>Live A4 Preview</h3><div class="a4-preview"><canvas id="previewCanvas" width="794" height="1123"></canvas></div><div class="info-list"><b style="color:#e33">Red dotted:</b> Top gap 2.2 mm<br><b style="color:#1769ff">Blue area:</b> selected crop<br><b>PDF mode:</b> selected crop prints as 171.2×54mm lamination strip<br><b>Image mode:</b> front/back lamination layout</div></div>
-      <div class="panel"><h3>Lamination Guide</h3><div class="lamination"><span>▭</span>→<span>🪪</span>→<span>▭</span></div><p class="info-list">Print → Fold → Laminate. Top center me 2.2 mm gap fixed rahega.</p></div>
-    </aside>
-  </div></div>`}
+  <div class="editor-shell v425-shell">
+    <div class="editor-top no-print">
+      <button id="backDocsTop" class="tool-btn">← Documents</button>
+      <button id="toggleSide" class="tool-btn">☰ Menu</button>
+      <div class="editor-title"><b>${doc.title}</b><small> PDF editor left/center • preview/settings right panel</small></div>
+      <span class="editor-status">v42.5 workspace layout</span>
+    </div>
+    <div class="editor-layout v425-layout">
+      <section class="panel main-editor-panel">
+        <div class="editor-work-head no-print">
+          <div><h2>${doc.title} Editor</h2><small>Yahin PDF ko zoom, crop, rotate aur fit-width se edit karo.</small></div>
+          <div class="quick-actions"><button class="primary" id="downloadPdf">⇩ Download</button><button class="success" id="printBtn">🖨 Print</button></div>
+        </div>
+        <div class="toolbar no-print editor-toolbar">
+          <select id="pageSelect"><option value="1">Page 1</option></select>
+          <button id="zoomOut">−</button><b id="zoomLabel">115%</b><button id="zoomIn">+</button>
+          <button id="fitBtn">⛶ Fit Width</button><button id="rotL">↶ Rotate Left</button><button id="rotR">↷ Rotate Right</button><button id="resetCrop">Reset Crop</button><button id="autoCrop">Auto Crop</button>
+        </div>
+        <div class="stage-wrap" id="stageWrap"><div class="stage" id="stage"><canvas id="sourceCanvas"></canvas><div class="crop-box" id="cropBox"><span class="handle h-nw" data-h="nw"></span><span class="handle h-n" data-h="n"></span><span class="handle h-ne" data-h="ne"></span><span class="handle h-e" data-h="e"></span><span class="handle h-se" data-h="se"></span><span class="handle h-s" data-h="s"></span><span class="handle h-sw" data-h="sw"></span><span class="handle h-w" data-h="w"></span><div class="move-label">✥<br>DRAG<br>MOVE</div></div></div></div>
+        <div class="tip compact-tip">Tip: PDF ko bada karke crop karo. Side “|” handles se width/height aur corner handles se dono direction adjust honge.</div>
+      </section>
+      <aside class="settings right-control-panel">
+        <div class="panel upload-control"><h3>Upload Source</h3><div class="upload-row side-upload-row"><div class="upload-box"><label>Official Full PDF Upload</label><input type="file" id="pdfFile" accept="application/pdf"><small>PDF mode me selected area single printable output banega.</small></div><div class="upload-box"><label>Front / Back Image Upload</label><input type="file" id="frontFile" accept="image/*"><input type="file" id="backFile" accept="image/*" style="margin-top:8px"><small>Front+Back layout sirf image mode me.</small></div></div></div>
+        <div class="panel preview-card sticky-preview"><h3>Live A4 Preview</h3><div class="a4-preview"><canvas id="previewCanvas" width="794" height="1123"></canvas></div><div class="preview-actions no-print"><button class="primary" id="downloadPdfSide">⇩ Download PDF</button><button class="success" id="printBtnSide">🖨 Print</button></div><div class="info-list"><b style="color:#e33">Red dotted:</b> Top gap 2.2 mm<br><b style="color:#1769ff">Blue area:</b> selected crop<br><b>PDF:</b> selected crop A4 output</div></div>
+        <div class="panel"><h3>Print & Crop Settings</h3><label>Top Margin / Center Gap (mm)</label><input id="topGap" type="number" step="0.1" value="2.2"><label>Output Size</label><select id="outputSize"><option>A4 (210 × 297 mm)</option></select><label>Print Layout</label><select id="printLayout"><option value="lamination">Aadhaar Lamination Strip 171.2 × 54 mm</option><option value="single">Single Card 85.6 × 54 mm</option><option value="fit">Fit Selected Area to A4 Width</option></select><label>Mode</label><select id="modeSelect"><option value="pdf">Official PDF Single Area</option><option value="images">Front + Back Images</option></select><label>Crop Position</label><div class="nudge"><span></span><button data-move="up">↑</button><span></span><button data-move="left">←</button><button data-move="center">●</button><button data-move="right">→</button><span></span><button data-move="down">↓</button><span></span></div><div class="info-list" id="cropInfo"></div></div>
+        <div class="panel"><h3>Lamination Guide</h3><div class="lamination"><span>▭</span>→<span>🪪</span>→<span>▭</span></div><p class="info-list">Print → Fold → Laminate. Top center me 2.2 mm gap fixed rahega.</p><button id="backDocs" class="tool-btn">← Back to Documents</button></div>
+      </aside>
+    </div>
+  </div>`}
 
 function bindEditor(){
   state.canvas = document.getElementById('sourceCanvas'); state.ctx=state.canvas.getContext('2d'); state.previewCanvas=document.getElementById('previewCanvas');
@@ -104,6 +109,8 @@ function bindEditor(){
   document.getElementById('autoCrop').onclick=autoCrop;
   document.getElementById('downloadPdf').onclick=downloadPdf;
   document.getElementById('printBtn').onclick=printOutput;
+  document.getElementById('downloadPdfSide').onclick=downloadPdf;
+  document.getElementById('printBtnSide').onclick=printOutput;
   document.getElementById('backDocs').onclick=showDocuments;
   document.getElementById('backDocsTop').onclick=showDocuments;
   document.getElementById('toggleSide').onclick=toggleEditorSidebar;
