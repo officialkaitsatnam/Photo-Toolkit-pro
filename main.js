@@ -1,7 +1,7 @@
-/* Smart Photo Toolkit Pro v42.1 - Real Document Studio Pro */
+/* Smart Photo Toolkit Pro v42.4 - Full Editor + Real A4 Print Engine */
 'use strict';
 
-const VERSION = 'v42.3-Real-A4-Lamination-Print-Fix';
+const VERSION = 'v42.4-Full-Editor-Real-A4-Print';
 const DOCS = [
   {id:'aadhaar', title:'Aadhaar Card', img:'aadhaar.jpg', desc:'Official PDF crop + 85.6 × 54 mm printable'},
   {id:'pan', title:'PAN Card', img:'pan.jpg', desc:'PAN printable crop and A4 output'},
@@ -28,20 +28,34 @@ window.addEventListener('load', () => {
 document.getElementById('menuBtn')?.addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
 function bindNav(){ document.querySelectorAll('.nav').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('sidebar')?.classList.remove('open'); const v=btn.dataset.view; if(v==='documents') showDocuments(); else if(v==='passport') showPassport(); else showSimple(v); })); }
 function setActive(view){ document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active', b.dataset.view===view)); }
-function showDashboard(){setActive('dashboard'); app.innerHTML=`<section class="hero"><h1>Smart Photo Toolkit Pro ${VERSION}</h1><p>Document Studio Pro: official PDF upload, professional crop, real A4 output, 2.2 mm lamination gap.</p></section><section class="grid">${DOCS.map(cardHtml).join('')}</section>`; bindDocCards();}
-function showDocuments(){setActive('documents'); app.innerHTML=`<div class="crumb">Dashboard › Document Studio</div><section class="hero"><h1>Document Studio</h1><p>Select document type. Har document me same professional crop + A4 printable engine milega.</p></section><section class="grid">${DOCS.map(cardHtml).join('')}</section>`; bindDocCards();}
+function showDashboard(){exitEditorMode();setActive('dashboard'); app.innerHTML=`<section class="hero"><h1>Smart Photo Toolkit Pro ${VERSION}</h1><p>Document Studio Pro: official PDF upload, professional crop, real A4 output, 2.2 mm lamination gap.</p></section><section class="grid">${DOCS.map(cardHtml).join('')}</section>`; bindDocCards();}
+function showDocuments(){exitEditorMode();setActive('documents'); app.innerHTML=`<div class="crumb">Dashboard › Document Studio</div><section class="hero"><h1>Document Studio</h1><p>Select document type. Har document me same professional crop + A4 printable engine milega.</p></section><section class="grid">${DOCS.map(cardHtml).join('')}</section>`; bindDocCards();}
 function cardHtml(d){return `<article class="doc-card" data-doc="${d.id}"><img src="${d.img}" alt="${d.title}"><h3>${d.title}</h3><p>${d.desc}</p></article>`}
 function bindDocCards(){ document.querySelectorAll('.doc-card').forEach(c=>c.addEventListener('click',()=>openEditor(c.dataset.doc))); }
-function showSimple(v){currentView=v; app.innerHTML=`<section class="hero"><h1>${titleCase(v)}</h1><p>This section is ready. Document Studio Pro is active in this build.</p></section>`;}
+function showSimple(v){exitEditorMode();currentView=v; app.innerHTML=`<section class="hero"><h1>${titleCase(v)}</h1><p>This section is ready. Document Studio Pro is active in this build.</p></section>`;}
 function showPassport(){ openEditor('passport'); }
 function titleCase(s){return String(s).replace(/([A-Z])/g,' $1').replace(/^./,m=>m.toUpperCase())}
 
+
+function enterEditorMode(){
+  document.body.classList.add('editor-mode');
+  document.body.classList.remove('editor-sidebar-open');
+  document.getElementById('sidebar')?.classList.remove('open');
+}
+function exitEditorMode(){
+  document.body.classList.remove('editor-mode','editor-sidebar-open');
+}
+function toggleEditorSidebar(){
+  document.body.classList.toggle('editor-sidebar-open');
+}
+
 function openEditor(docId){
+  enterEditorMode();
   currentView='editor';
   const doc = DOCS.find(d=>d.id===docId) || {id:'passport',title:'Passport Photo',img:'icon-192.png'};
   state = {
     doc, mode:'pdf', pdf:null, page:1, totalPages:1, zoom:1.15, rotation:0,
-    frontImg:null, backImg:null, activeImage:'front', topGap:2.2,
+    frontImg:null, backImg:null, activeImage:'front', topGap:2.2, printLayout:'lamination',
     crop:{x:40,y:40,w:360,h:240}, drag:null, canvas:null, ctx:null, previewCanvas:null
   };
   app.innerHTML = editorHtml(doc);
@@ -50,7 +64,7 @@ function openEditor(docId){
   updatePreview();
 }
 function editorHtml(doc){return `
-  <div class="crumb">Dashboard › Document Studio › <b>${doc.title}</b></div>
+  <div class="editor-shell"><div class="editor-top no-print"><button id="backDocsTop" class="tool-btn">← Documents</button><button id="toggleSide" class="tool-btn">☰ Menu</button><div><b>${doc.title}</b><small> Full-screen Document Studio Pro</small></div><span class="editor-status">PDF maximum workspace active</span></div>
   <div class="editor-layout">
     <section class="panel">
       <h2>${doc.title} PDF – Crop & Printable</h2>
@@ -69,11 +83,11 @@ function editorHtml(doc){return `
       <div class="actions no-print"><button class="primary" id="downloadPdf">⇩ Download PDF</button><button class="success" id="printBtn">🖨 Print</button><button id="backDocs">← Back to Documents</button></div>
     </section>
     <aside class="settings">
-      <div class="panel"><h3>Crop Settings</h3><label>Top Margin / Center Gap (mm)</label><input id="topGap" type="number" step="0.1" value="2.2"><label>Output Size</label><select id="outputSize"><option>A4 (210 × 297 mm)</option></select><label>Mode</label><select id="modeSelect"><option value="pdf">Official PDF Single Area</option><option value="images">Front + Back Images</option></select><label>Crop Position</label><div class="nudge"><span></span><button data-move="up">↑</button><span></span><button data-move="left">←</button><button data-move="center">●</button><button data-move="right">→</button><span></span><button data-move="down">↓</button><span></span></div><div class="info-list" id="cropInfo"></div></div>
+      <div class="panel"><h3>Crop Settings</h3><label>Top Margin / Center Gap (mm)</label><input id="topGap" type="number" step="0.1" value="2.2"><label>Output Size</label><select id="outputSize"><option>A4 (210 × 297 mm)</option></select><label>Print Layout</label><select id="printLayout"><option value="lamination">Aadhaar Lamination Strip 171.2 × 54 mm</option><option value="single">Single Card 85.6 × 54 mm</option><option value="fit">Fit Selected Area to A4 Width</option></select><label>Mode</label><select id="modeSelect"><option value="pdf">Official PDF Single Area</option><option value="images">Front + Back Images</option></select><label>Crop Position</label><div class="nudge"><span></span><button data-move="up">↑</button><span></span><button data-move="left">←</button><button data-move="center">●</button><button data-move="right">→</button><span></span><button data-move="down">↓</button><span></span></div><div class="info-list" id="cropInfo"></div></div>
       <div class="panel preview-card"><h3>Live A4 Preview</h3><div class="a4-preview"><canvas id="previewCanvas" width="794" height="1123"></canvas></div><div class="info-list"><b style="color:#e33">Red dotted:</b> Top gap 2.2 mm<br><b style="color:#1769ff">Blue area:</b> selected crop<br><b>PDF mode:</b> selected crop prints as 171.2×54mm lamination strip<br><b>Image mode:</b> front/back lamination layout</div></div>
       <div class="panel"><h3>Lamination Guide</h3><div class="lamination"><span>▭</span>→<span>🪪</span>→<span>▭</span></div><p class="info-list">Print → Fold → Laminate. Top center me 2.2 mm gap fixed rahega.</p></div>
     </aside>
-  </div>`}
+  </div></div>`}
 
 function bindEditor(){
   state.canvas = document.getElementById('sourceCanvas'); state.ctx=state.canvas.getContext('2d'); state.previewCanvas=document.getElementById('previewCanvas');
@@ -81,8 +95,8 @@ function bindEditor(){
   document.getElementById('frontFile').addEventListener('change', e=>loadImageFile(e,'front'));
   document.getElementById('backFile').addEventListener('change', e=>loadImageFile(e,'back'));
   document.getElementById('pageSelect').addEventListener('change',e=>{state.page=+e.target.value; renderPdfPage();});
-  document.getElementById('zoomIn').onclick=()=>{state.zoom=Math.min(4,state.zoom+.15); renderCurrent();};
-  document.getElementById('zoomOut').onclick=()=>{state.zoom=Math.max(.35,state.zoom-.15); renderCurrent();};
+  document.getElementById('zoomIn').onclick=()=>{state.zoom=Math.min(8,state.zoom+.25); renderCurrent();};
+  document.getElementById('zoomOut').onclick=()=>{state.zoom=Math.max(.25,state.zoom-.25); renderCurrent();};
   document.getElementById('fitBtn').onclick=fitWidth;
   document.getElementById('rotL').onclick=()=>{state.rotation=(state.rotation+270)%360; renderCurrent();};
   document.getElementById('rotR').onclick=()=>{state.rotation=(state.rotation+90)%360; renderCurrent();};
@@ -91,8 +105,11 @@ function bindEditor(){
   document.getElementById('downloadPdf').onclick=downloadPdf;
   document.getElementById('printBtn').onclick=printOutput;
   document.getElementById('backDocs').onclick=showDocuments;
+  document.getElementById('backDocsTop').onclick=showDocuments;
+  document.getElementById('toggleSide').onclick=toggleEditorSidebar;
   document.getElementById('topGap').addEventListener('input',e=>{state.topGap=parseFloat(e.target.value)||2.2; updatePreview();});
   document.getElementById('modeSelect').addEventListener('change',e=>{state.mode=e.target.value; renderCurrent();});
+  document.getElementById('printLayout').addEventListener('change',e=>{state.printLayout=e.target.value; updatePreview();});
   document.querySelectorAll('[data-move]').forEach(b=>b.onclick=()=>nudge(b.dataset.move));
   setupCropEvents();
 }
@@ -101,12 +118,12 @@ function loadImageFile(e,slot){ const file=e.target.files[0]; if(!file)return; c
 function renderCurrent(){ if(state.mode==='pdf' && state.pdf) renderPdfPage(); else if(state.mode==='images' && (state.frontImg||state.backImg)) renderImage(state.frontImg||state.backImg); else drawBlankStage(); }
 async function renderPdfPage(reset=false){ if(!state.pdf){drawBlankStage();return;} const page=await state.pdf.getPage(state.page); const viewport=page.getViewport({scale:state.zoom, rotation:state.rotation}); state.canvas.width=Math.round(viewport.width); state.canvas.height=Math.round(viewport.height); await page.render({canvasContext:state.ctx, viewport}).promise; syncStageSize(); if(reset) resetCrop(); else applyCrop(); updateZoomLabel(); updatePreview(); }
 function renderImage(img, reset=false){ const maxW=900; const sc=state.zoom*Math.min(1,maxW/img.width); state.canvas.width=Math.round(img.width*sc); state.canvas.height=Math.round(img.height*sc); state.ctx.fillStyle='#fff';state.ctx.fillRect(0,0,state.canvas.width,state.canvas.height); if(state.rotation){ state.ctx.save(); state.ctx.translate(state.canvas.width/2,state.canvas.height/2); state.ctx.rotate(state.rotation*Math.PI/180); state.ctx.drawImage(img,-state.canvas.width/2,-state.canvas.height/2,state.canvas.width,state.canvas.height); state.ctx.restore(); } else state.ctx.drawImage(img,0,0,state.canvas.width,state.canvas.height); syncStageSize(); if(reset) resetCrop(); else applyCrop(); updateZoomLabel(); updatePreview(); }
-function drawBlankStage(){ state.canvas.width=760; state.canvas.height=520; state.ctx.fillStyle='#fff'; state.ctx.fillRect(0,0,760,520); state.ctx.fillStyle='#eaf1fb'; state.ctx.fillRect(60,60,640,400); state.ctx.fillStyle='#53647d'; state.ctx.font='bold 24px Arial'; state.ctx.textAlign='center'; state.ctx.fillText('Upload official PDF or front/back image',380,250); syncStageSize(); resetCrop(); }
+function drawBlankStage(){ state.canvas.width=980; state.canvas.height=680; state.ctx.fillStyle='#fff'; state.ctx.fillRect(0,0,980,680); state.ctx.fillStyle='#eaf1fb'; state.ctx.fillRect(80,80,820,500); state.ctx.fillStyle='#53647d'; state.ctx.font='bold 24px Arial'; state.ctx.textAlign='center'; state.ctx.fillText('Upload official PDF or front/back image',490,330); syncStageSize(); resetCrop(); }
 function syncStageSize(){ const st=document.getElementById('stage'); st.style.width=state.canvas.width+'px'; st.style.height=state.canvas.height+'px'; }
 function updateZoomLabel(){ document.getElementById('zoomLabel').textContent=Math.round(state.zoom*100)+'%'; }
 function resetCrop(){ const w=state.canvas.width,h=state.canvas.height; state.crop={x:Math.round(w*.08),y:Math.round(h*.08),w:Math.round(w*.84),h:Math.round(h*.55)}; applyCrop(); updatePreview(); }
 function autoCrop(){ const w=state.canvas.width,h=state.canvas.height; state.crop={x:Math.round(w*.1),y:Math.round(h*.18),w:Math.round(w*.8),h:Math.round(h*.48)}; applyCrop(); updatePreview(); }
-function fitWidth(){ const wrap=document.getElementById('stageWrap'); const target=Math.max(360, wrap.clientWidth-50); const natural=state.canvas.width/state.zoom; if(natural>0){state.zoom=target/natural; renderCurrent();} }
+function fitWidth(){ const wrap=document.getElementById('stageWrap'); const target=Math.max(520, wrap.clientWidth-24); const natural=state.canvas.width/state.zoom; if(natural>0){state.zoom=target/natural; renderCurrent();} }
 function applyCrop(){ const c=clampCrop(state.crop); state.crop=c; const box=document.getElementById('cropBox'); box.style.left=c.x+'px';box.style.top=c.y+'px';box.style.width=c.w+'px';box.style.height=c.h+'px'; updateInfo(); }
 function clampCrop(c){ const min=36,W=state.canvas.width,H=state.canvas.height; c.x=Math.max(0,Math.min(c.x,W-min)); c.y=Math.max(0,Math.min(c.y,H-min)); c.w=Math.max(min,Math.min(c.w,W-c.x)); c.h=Math.max(min,Math.min(c.h,H-c.y)); return c; }
 function setupCropEvents(){ const box=document.getElementById('cropBox'); box.addEventListener('pointerdown', startDrag); box.querySelectorAll('.handle').forEach(h=>h.addEventListener('pointerdown', startDrag)); window.addEventListener('pointermove', moveDrag); window.addEventListener('pointerup', endDrag); }
@@ -115,16 +132,15 @@ function moveDrag(e){ if(!state.drag)return; const d=state.drag, dx=e.clientX-d.
 function endDrag(){ state.drag=null; }
 function nudge(dir){ const step= dir==='center'?0:5; if(dir==='left')state.crop.x-=step; if(dir==='right')state.crop.x+=step; if(dir==='up')state.crop.y-=step; if(dir==='down')state.crop.y+=step; if(dir==='center'){state.crop.x=(state.canvas.width-state.crop.w)/2;state.crop.y=(state.canvas.height-state.crop.h)/2;} applyCrop(); updatePreview(); }
 function getCroppedCanvas(){ const c=state.crop; const out=document.createElement('canvas'); out.width=Math.max(1,Math.round(c.w)); out.height=Math.max(1,Math.round(c.h)); out.getContext('2d').drawImage(state.canvas,c.x,c.y,c.w,c.h,0,0,out.width,out.height); return out; }
-function updateInfo(){ const c=state.crop; const mmW=(c.w/MM_TO_PX/state.zoom).toFixed(1); const mmH=(c.h/MM_TO_PX/state.zoom).toFixed(1); const el=document.getElementById('cropInfo'); if(el) el.innerHTML=`<br><b>Crop Info</b><br>Width: ${mmW} mm<br>Height: ${mmH} mm<br>Canvas: ${state.canvas.width} × ${state.canvas.height}px<br>Mode: ${state.mode==='pdf'?'Official PDF':'Front/Back Images'}`; }
+function updateInfo(){ const c=state.crop; const mmW=(c.w/MM_TO_PX/state.zoom).toFixed(1); const mmH=(c.h/MM_TO_PX/state.zoom).toFixed(1); const el=document.getElementById('cropInfo'); if(el) el.innerHTML=`<br><b>Crop Info</b><br>Width: ${mmW} mm<br>Height: ${mmH} mm<br>Canvas: ${state.canvas.width} × ${state.canvas.height}px<br>Mode: ${state.mode==='pdf'?'Official PDF':'Front/Back Images'}<br>Print Layout: ${state.printLayout}`; }
 function getPdfPrintSizeMm(crop){
-  // v42.3 FIX: Official Aadhaar PDFs are meant for fold + lamination.
-  // The selected crop is printed as a real-size lamination strip, not as a small thumbnail.
-  // Front + Back combined strip = 171.2 × 54 mm. Single-card fallback = 85.6 × 54 mm.
-  const aspect = Math.max(0.2, crop.width / crop.height);
-  if (state.doc?.id === 'aadhaar' || aspect > 1.45) {
-    return {w:LAMINATION.w, h:LAMINATION.h};
+  // v42.4: mm-based print size. Preview, PDF and print use this same function.
+  if(state.printLayout === 'single') return {w:CARD.w, h:CARD.h};
+  if(state.printLayout === 'fit'){
+    const aspect=Math.max(0.2, crop.width/crop.height);
+    const w=190; return {w, h:Math.min(270, w/aspect)};
   }
-  return {w:CARD.w, h:CARD.h};
+  return {w:LAMINATION.w, h:LAMINATION.h};
 }
 function drawImageCover(ctx, img, x, y, w, h){
   // Fill the exact mm box without leaving extra white space. User crop controls the final area.
@@ -155,6 +171,7 @@ function drawPdfSelection(ctx,img,scale,top,pageW,label){
     ctx.setLineDash([]);
   }
   ctx.fillStyle='#111'; ctx.font=`bold ${Math.max(7,scale*2.2)}px Arial`; ctx.textAlign='center'; ctx.fillText(label,x+w/2,top+h+Math.max(10,scale*3));
+  ctx.font=`${Math.max(6,scale*1.6)}px Arial`; ctx.fillStyle='#555'; ctx.fillText(`${(w/scale).toFixed(1)} × ${(h/scale).toFixed(1)} mm`,x+w/2,top+h+Math.max(18,scale*5.2));
   ctx.restore();
 }
 function updatePreview(){

@@ -1,3 +1,4 @@
+// Smart Photo Toolkit Pro v42.4 service worker
 const CACHE_NAME='spt-v42-1-real-document-studio-pro';
 const ASSETS=['./','./index.html','./main.css','./main.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./aadhaar.jpg','./pan.jpg','./voter.jpg','./dl.jpg','./abha.jpg','./ayushman.jpg'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()))});

@@ -1,17 +1,10 @@
-# Update Guide – v42.2
+# v42.4 Upload Guide
 
 1. Extract this ZIP.
-2. Upload all files to GitHub repository root.
-3. Replace existing files when asked.
-4. Wait for GitHub Pages deploy to turn green.
-5. Open site in incognito or clear cache.
+2. Upload all files directly into the GitHub repository root.
+3. Do not upload the folder itself; upload the files inside it.
+4. Wait for GitHub Pages deployment to finish.
+5. Open the site with cache-busting if needed:
+   `https://officialkaitsatnam.github.io/Photo-Toolkit-pro/?v=42.4`
 
-Important: during browser print select **A4**, **Portrait**, **Scale 100% / Actual size**, margins **None**.
-
-
-## v42.3 Real A4 Lamination Print Fix
-- Official Aadhaar PDF crop now prints as 171.2 × 54 mm fold + lamination strip.
-- Crop output is no longer placed as a small thumbnail on A4.
-- A4 page keeps 2.2 mm top gap and center alignment.
-- Middle fold guide added for front/back lamination strip.
-- Use printer scale: Actual Size / 100%, margins: None.
+Important print setting: A4, Actual Size / 100%, Margins None.
