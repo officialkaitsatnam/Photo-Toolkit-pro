@@ -3,85 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart Photo Toolkit Pro v41.8 Document Studio Tools</title>
-  <meta name="description" content="Enterprise photo, document and PDF toolkit with A4 print-ready outputs." />
-  <link rel="stylesheet" href="style.css?v=41.6-Build-1A" />
-  <link rel="stylesheet" href="main.css?v=41.6-Build-1A" />
+  <title>Smart Photo Toolkit Pro v42.3</title>
+  <meta name="description" content="Real Document Studio Pro with PDF crop, A4 print and lamination layout." />
+  <link rel="stylesheet" href="main.css?v=42.3-real-a4-lamination-print-fix" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#06142f" />
   <link rel="icon" href="icon-192.png" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 </head>
 <body>
-  <div id="loader"><div class="spinner"></div><h2>Smart Photo Toolkit Pro</h2><p>v41.8 Document Studio loading...</p></div>
-
+  <div id="loader" class="loader"><div class="spinner"></div><b>Smart Photo Toolkit Pro</b><span>v42.3 Real A4 Lamination Print Fix</span></div>
   <header class="topbar">
-    <div class="top-brand">
-      <div class="app-logo">📸</div>
-      <strong>Smart Photo Toolkit</strong><span class="pro-badge">Pro</span>
-      <button class="hamburger" id="menuBtn" onclick="window.toggleSidebarFixed&&window.toggleSidebarFixed()">☰</button>
-    </div>
-    <div class="top-actions">
-      <button class="premium-top" onclick="showTool('premium')">👑 Premium</button>
-      <button class="circle-btn notif" title="Notifications">🔔<span>3</span></button>
-      <div class="user-menu" id="userMenu">
-        <button class="user-trigger" id="userTrigger">
-          <span class="avatar" id="headerAvatar">G</span>
-          <span class="user-lines"><b id="headerUserName">Guest User</b><small id="headerUserPlan">Login required</small></span>
-          <span>⌄</span>
-        </button>
-        <div class="user-dropdown" id="userDropdown">
-          <button onclick="showTool('dashboard')">👤 My Profile</button>
-          <button onclick="showTool('dashboard')">✏️ Edit Profile</button>
-          <button onclick="showTool('premium')">👑 Membership</button>
-          <button onclick="showTool('payment')">💳 Payment History</button>
-          <button onclick="showTool('workspace')">📁 My Workspace</button>
-          <button onclick="showTool('settings')">⚙️ Settings</button>
-          <button id="adminDropBtn" onclick="showTool('admin')">📊 Admin Panel</button>
-          <button onclick="logoutOrLogin()" id="logoutDropBtn">🚪 Login / Logout</button>
-        </div>
-      </div>
-    </div>
+    <button class="mobile-menu" id="menuBtn">☰</button>
+    <div class="brand"><span class="logo">📸</span><strong>Smart Photo Toolkit</strong><span class="badge">Pro</span></div>
+    <div class="top-actions"><button class="premium">👑 Premium</button><button class="bell">🔔<i>3</i></button><div class="avatar">S</div><div class="user"><b>Satnam</b><small>Premium User</small></div></div>
   </header>
-
-  <div class="app-shell">
+  <div class="shell">
     <aside class="sidebar" id="sidebar">
-      <div class="menu-label">MAIN MENU</div>
-      <button class="nav-item active" data-tool="home">⌂ Home</button>
-      <button class="nav-item" data-tool="passport">👤 Passport Photo</button>
-      <button class="nav-item" data-tool="compressor">🖼️ Image Compressor</button>
-      <button class="nav-item" data-tool="namedate">🏷️ Name / Date Photo</button>
-      <button class="nav-item protected" data-tool="documentStudio">▤ Document Studio <span class="protected-badge">Login</span></button>
-      <button class="nav-item protected" data-tool="pdfStudio">▧ PDF Studio <span class="protected-badge">Login</span></button>
-      <button class="nav-item" data-tool="feedback">? Feedback</button>
-      <button class="nav-item" data-tool="login">🔐 Login / Sign Up</button>
+      <div class="menu-title">MAIN MENU</div>
+      <button class="nav active" data-view="dashboard">⌂ Dashboard</button>
+      <button class="nav" data-view="passport">👤 Passport Photo</button>
+      <button class="nav" data-view="compressor">🖼️ Image Compressor</button>
+      <button class="nav" data-view="namedate">🏷️ Name / Date Photo</button>
+      <button class="nav" data-view="documents">▤ Document Studio</button>
+      <button class="nav" data-view="pdfstudio">▧ PDF Studio</button>
+      <button class="nav" data-view="workspace">📁 My Workspace</button>
+      <button class="nav" data-view="downloads">⇩ Downloads</button>
     </aside>
-
-    <main class="main">
-      <section id="workspace" class="workspace"></section>
-    </main>
+    <main id="app" class="app"></main>
   </div>
-
-
-  <footer class="site-footer" id="siteFooter">
-    <div class="footer-links">
-      <button onclick="showFooterPage('about')">About Us</button>
-      <button onclick="showFooterPage('contact')">Contact Us</button>
-      <button onclick="showFooterPage('privacy')">Privacy Policy</button>
-      <button onclick="showFooterPage('terms')">Terms & Conditions</button>
-      <button onclick="showFooterPage('refund')">Refund Policy</button>
-      <button onclick="showFooterPage('help')">Help Center</button>
-      <button onclick="showTool('feedback')">Feedback</button>
-    </div>
-    <div class="footer-copy">© 2026 Smart Photo Toolkit Pro · v41.8 Document Studio Tools</div>
-  </footer>
-  <div id="toast" class="toast"></div>
-  <script>window.SPT_CONFIG={version:"v41.8-Document-Studio-Tools",appName:"Smart Photo Toolkit Pro",apiUrl:"https://script.google.com/macros/s/AKfycbzNel2GhBCLmvCt6kH75uODdsYhLnwhFlYb-3tBi3ubLtbvdi9HdGpDLt6SEXaaIJJC3A/exec"};</script>
-  <script src="main.js?v=41.6-Build-1A"></script>
-  <script src="script.js?v=41.6-Build-1A"></script>
-  <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
+  <script src="main.js?v=42.3-real-a4-lamination-print-fix"></script>
 </body>
 </html>
