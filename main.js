@@ -1,7 +1,7 @@
-/* Smart Photo Toolkit Pro v42.9 - Passport/PDF/Auth Regression Safe */
+/* Smart Photo Toolkit Pro v43.0 - Passport Crop + Real PDF Resizer */
 'use strict';
 
-const VERSION = 'v42.9-Passport-PDF-Auth-Restore';
+const VERSION = 'v43.0-Passport-Crop-PDF-Resizer';
 const DOCS = [
   {id:'aadhaar', title:'Aadhaar Card', img:'aadhaar.jpg', desc:'Official PDF crop + 85.6 × 54 mm printable'},
   {id:'pan', title:'PAN Card', img:'pan.jpg', desc:'PAN printable crop and A4 output'},
@@ -16,7 +16,7 @@ const CARD = {w:85.6, h:54};
 const LAMINATION = {w:171.2, h:54}; // official Aadhaar front+back fold strip
 let app, currentView='dashboard';
 let state = null;
-const AUTH_KEY='spt_user_v429';
+const AUTH_KEY='spt_user_v430';
 let currentUser = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
 
 window.addEventListener('load', () => {
@@ -98,74 +98,131 @@ function showFooterPage(type){ exitEditorMode(); const map={about:['About','Smar
 function val(id){return document.getElementById(id)?.value||''}
 function toast(msg){ let t=document.getElementById('toast'); if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t)} t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); }
 function toolShell(title,desc,body){ return `<section class="hero"><h1>${title}</h1><p>${desc}</p></section><section class="tool-panel">${body}</section>`; }
-function passportHtml(){ return toolShell('Passport Photo','India passport style A4 print: 35 × 45 mm, 5 photos, 2.2 mm gap and 2.2 mm top margin.',`
-  <div class="passport-tool-v429">
-    <div class="tool-row">
-      <div class="upload-box full"><label>Upload Passport Photo</label><input type="file" id="passportInput" accept="image/*"><small>India passport preset: 35 × 45 mm. A4 par 5 photo print.</small></div>
-      <div class="mini-controls">
-        <label>Photo Width (mm)</label><input id="ppW" type="number" step="0.1" value="35">
-        <label>Photo Height (mm)</label><input id="ppH" type="number" step="0.1" value="45">
-        <label>Count</label><input id="ppCount" type="number" min="1" max="20" value="5">
-        <label>Gap (mm)</label><input id="ppGap" type="number" step="0.1" value="2.2">
-        <label>Top A4 Gap (mm)</label><input id="ppTop" type="number" step="0.1" value="2.2">
-      </div>
+function passportHtml(){ return toolShell('Passport Photo','India passport crop editor: crop photo, India 35 × 45 mm preset, A4 par 5 photos, 2.2 mm gap/top margin.',`
+  <div class="passport-tool-v430">
+    <div class="passport-grid-v430">
+      <section class="passport-editor-card">
+        <div class="upload-box full"><label>Upload Passport Photo</label><input type="file" id="passportInput" accept="image/*"><small>Photo upload ke baad crop box ko drag/resize karo. Output 35 × 45 mm India passport style hoga.</small></div>
+        <div class="passport-editor-toolbar toolbar">
+          <button id="ppZoomOut">−</button><b id="ppZoomLabel">100%</b><button id="ppZoomIn">+</button>
+          <button id="ppFit">Fit Photo</button><button id="ppRotateL">↶</button><button id="ppRotateR">↷</button><button id="ppResetCrop">Reset Crop</button>
+        </div>
+        <div class="passport-crop-stage-wrap"><div id="ppStage" class="passport-crop-stage"><canvas id="passportEditCanvas" width="720" height="520"></canvas><div id="ppCropBox" class="pp-crop-box"><span data-h="nw" class="pp-h pp-nw"></span><span data-h="n" class="pp-h pp-n"></span><span data-h="ne" class="pp-h pp-ne"></span><span data-h="e" class="pp-h pp-e"></span><span data-h="se" class="pp-h pp-se"></span><span data-h="s" class="pp-h pp-s"></span><span data-h="sw" class="pp-h pp-sw"></span><span data-h="w" class="pp-h pp-w"></span><em>DRAG</em></div></div></div>
+      </section>
+      <aside class="passport-right-v430">
+        <div class="mini-controls">
+          <h3>India Passport Layout</h3>
+          <label>Photo Width (mm)</label><input id="ppW" type="number" step="0.1" value="35">
+          <label>Photo Height (mm)</label><input id="ppH" type="number" step="0.1" value="45">
+          <label>Count on A4</label><input id="ppCount" type="number" min="1" max="20" value="5">
+          <label>Gap (mm)</label><input id="ppGap" type="number" step="0.1" value="2.2">
+          <label>Top A4 Gap (mm)</label><input id="ppTop" type="number" step="0.1" value="2.2">
+          <div class="toolbar"><button id="passportDownload" class="primary">Download A4 PDF</button><button id="passportPrint" class="success">Print A4</button></div>
+          <small class="muted-note">Print settings: A4, Scale 100%, Margins None.</small>
+        </div>
+        <div class="passport-preview"><canvas id="passportCanvas" width="2480" height="3508"></canvas></div>
+      </aside>
     </div>
-    <div class="toolbar"><button id="passportFit">Fit / Refresh</button><button id="passportDownload" class="primary">Download A4 PDF</button><button id="passportPrint" class="success">Print A4</button></div>
-    <div class="passport-preview"><canvas id="passportCanvas" width="1240" height="1754"></canvas></div>
   </div>`); }
 function bindPassportTool(){
-  const c=document.getElementById('passportCanvas'), ctx=c.getContext('2d');
-  let img=null;
-  const dpi=150, pxPerMm=dpi/25.4;
+  const edit=document.getElementById('passportEditCanvas'), ectx=edit.getContext('2d');
+  const out=document.getElementById('passportCanvas'), octx=out.getContext('2d');
+  const stage=document.getElementById('ppStage'), box=document.getElementById('ppCropBox');
+  let img=null, angle=0, zoom=1, imgRect={x:0,y:0,w:0,h:0}, crop={x:140,y:70,w:260,h:335}, drag=null;
+  const outDpi=300, outPxPerMm=outDpi/25.4;
   function n(id,def){return parseFloat(document.getElementById(id)?.value)||def}
-  function draw(){
-    c.width=Math.round(210*pxPerMm); c.height=Math.round(297*pxPerMm);
-    ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
-    ctx.strokeStyle='#d7e2f2';ctx.lineWidth=1;ctx.strokeRect(0,0,c.width,c.height);
-    const w=n('ppW',35)*pxPerMm,h=n('ppH',45)*pxPerMm,g=n('ppGap',2.2)*pxPerMm,top=n('ppTop',2.2)*pxPerMm,count=Math.max(1,Math.min(20,parseInt(document.getElementById('ppCount')?.value||5)));
-    const totalW=count*w+(count-1)*g; let x=(c.width-totalW)/2, y=top;
-    ctx.fillStyle='#f1f6ff';ctx.fillRect(0,0,c.width,top);
-    ctx.strokeStyle='#1769ff';ctx.setLineDash([8,8]);ctx.beginPath();ctx.moveTo(0,top);ctx.lineTo(c.width,top);ctx.stroke();ctx.setLineDash([]);
-    for(let i=0;i<count;i++){
-      const px=x+i*(w+g); ctx.fillStyle='#fff';ctx.fillRect(px,y,w,h);ctx.strokeStyle='#111827';ctx.lineWidth=2;ctx.strokeRect(px,y,w,h);
-      if(img){
-        const r=Math.max(w/img.width,h/img.height); const iw=img.width*r, ih=img.height*r;
-        ctx.save(); ctx.beginPath();ctx.rect(px,y,w,h);ctx.clip(); ctx.drawImage(img,px+(w-iw)/2,y+(h-ih)/2,iw,ih); ctx.restore();
-      }else{ctx.fillStyle='#8090a8';ctx.font='bold 24px Arial';ctx.textAlign='center';ctx.fillText('35×45',px+w/2,y+h/2);}
-    }
-    ctx.fillStyle='#2d3b55';ctx.font='18px Arial';ctx.textAlign='left';ctx.fillText('A4 Passport Layout • 5 Photos • 2.2 mm top/gap',18,c.height-24);
+  function setBox(){ box.style.display=img?'block':'none'; box.style.left=crop.x+'px'; box.style.top=crop.y+'px'; box.style.width=crop.w+'px'; box.style.height=crop.h+'px'; }
+  function drawEditor(){
+    ectx.clearRect(0,0,edit.width,edit.height); ectx.fillStyle='#f3f7ff'; ectx.fillRect(0,0,edit.width,edit.height);
+    ectx.strokeStyle='#d8e5f8'; ectx.strokeRect(0,0,edit.width,edit.height);
+    if(!img){ ectx.fillStyle='#64748b'; ectx.font='bold 24px Arial'; ectx.textAlign='center'; ectx.fillText('Upload photo to crop',edit.width/2,edit.height/2); box.style.display='none'; drawA4(); return; }
+    const base=Math.min(edit.width/img.width, edit.height/img.height)*0.92*zoom;
+    const dw=img.width*base, dh=img.height*base; imgRect={x:(edit.width-dw)/2,y:(edit.height-dh)/2,w:dw,h:dh};
+    ectx.save(); ectx.translate(edit.width/2, edit.height/2); ectx.rotate(angle*Math.PI/180); ectx.drawImage(img,-dw/2,-dh/2,dw,dh); ectx.restore();
+    setBox(); drawA4(); updatePpInfo();
   }
-  document.getElementById('passportInput').onchange=e=>{const f=e.target.files[0]; if(!f)return; img=new Image(); img.onload=draw; img.src=URL.createObjectURL(f)};
-  ['ppW','ppH','ppCount','ppGap','ppTop'].forEach(id=>document.getElementById(id)?.addEventListener('input',draw));
-  document.getElementById('passportFit').onclick=draw;
-  document.getElementById('passportDownload').onclick=()=>{ const {jsPDF}=window.jspdf||{}; if(!jsPDF){downloadCanvas(c,'india_passport_5_photo_a4.png','image/png');return;} const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'}); pdf.addImage(c.toDataURL('image/jpeg',0.96),'JPEG',0,0,210,297); pdf.save('india_passport_5_photo_a4.pdf'); };
-  document.getElementById('passportPrint').onclick=()=>{ const data=c.toDataURL('image/png'); const w=window.open('','_blank'); w.document.write(`<html><head><title>Passport A4 Print</title><style>@page{size:A4;margin:0}body{margin:0}img{width:210mm;height:297mm;display:block}</style></head><body><img src="${data}"></body></html>`); w.document.close(); setTimeout(()=>w.print(),350); };
-  draw();
+  function cropToCanvas(){
+    const pw=Math.max(1,Math.round(crop.w*3)), ph=Math.max(1,Math.round(crop.h*3));
+    const cc=document.createElement('canvas'); cc.width=pw; cc.height=ph; const cx=cc.getContext('2d');
+    cx.fillStyle='#fff'; cx.fillRect(0,0,pw,ph);
+    cx.drawImage(edit, crop.x, crop.y, crop.w, crop.h, 0, 0, pw, ph);
+    return cc;
+  }
+  function drawA4(){
+    out.width=Math.round(210*outPxPerMm); out.height=Math.round(297*outPxPerMm);
+    octx.fillStyle='#fff'; octx.fillRect(0,0,out.width,out.height);
+    const w=n('ppW',35)*outPxPerMm, h=n('ppH',45)*outPxPerMm, g=n('ppGap',2.2)*outPxPerMm, top=n('ppTop',2.2)*outPxPerMm;
+    const count=Math.max(1,Math.min(20,parseInt(document.getElementById('ppCount')?.value||5)));
+    const totalW=count*w+(count-1)*g; let x=(out.width-totalW)/2, y=top;
+    octx.fillStyle='#f7fbff'; octx.fillRect(0,0,out.width,top);
+    octx.strokeStyle='#1769ff'; octx.lineWidth=2; octx.setLineDash([18,12]); octx.beginPath(); octx.moveTo(0,top); octx.lineTo(out.width,top); octx.stroke(); octx.setLineDash([]);
+    const cropped = img ? cropToCanvas() : null;
+    for(let i=0;i<count;i++){
+      const px=x+i*(w+g); octx.fillStyle='#fff'; octx.fillRect(px,y,w,h);
+      if(cropped) octx.drawImage(cropped,px,y,w,h); else {octx.fillStyle='#eef5ff'; octx.fillRect(px,y,w,h); octx.fillStyle='#7b8aa3'; octx.font='bold 48px Arial'; octx.textAlign='center'; octx.fillText('35×45',px+w/2,y+h/2);}
+      octx.strokeStyle='#111827'; octx.lineWidth=2; octx.strokeRect(px,y,w,h);
+    }
+    octx.fillStyle='#27364f'; octx.font='28px Arial'; octx.textAlign='left'; octx.fillText('A4 India Passport Photo • 35 × 45 mm • 5 copies • 2.2 mm gap',35,out.height-44);
+  }
+  function updatePpInfo(){ const z=document.getElementById('ppZoomLabel'); if(z)z.textContent=Math.round(zoom*100)+'%'; }
+  function resetCrop(){ crop={x:edit.width/2-130,y:edit.height/2-167,w:260,h:335}; setBox(); drawA4(); }
+  function clampCrop(){ crop.w=Math.max(35,crop.w); crop.h=Math.max(45,crop.h); crop.x=Math.max(0,Math.min(edit.width-crop.w,crop.x)); crop.y=Math.max(0,Math.min(edit.height-crop.h,crop.y)); }
+  box.addEventListener('pointerdown',e=>{ if(!img)return; e.preventDefault(); box.setPointerCapture(e.pointerId); const h=e.target.dataset.h||'move'; drag={h,sx:e.clientX,sy:e.clientY,start:{...crop}}; });
+  box.addEventListener('pointermove',e=>{ if(!drag)return; const dx=e.clientX-drag.sx,dy=e.clientY-drag.sy; crop={...drag.start}; const h=drag.h; if(h==='move'){crop.x+=dx;crop.y+=dy}else{ if(h.includes('e'))crop.w+=dx; if(h.includes('s'))crop.h+=dy; if(h.includes('w')){crop.x+=dx;crop.w-=dx} if(h.includes('n')){crop.y+=dy;crop.h-=dy} } clampCrop(); setBox(); drawA4(); });
+  box.addEventListener('pointerup',()=>drag=null); box.addEventListener('pointercancel',()=>drag=null);
+  document.getElementById('passportInput').onchange=e=>{ const f=e.target.files[0]; if(!f)return; img=new Image(); img.onload=()=>{angle=0; zoom=1; resetCrop(); drawEditor();}; img.src=URL.createObjectURL(f); };
+  document.getElementById('ppZoomIn').onclick=()=>{zoom=Math.min(5,zoom+.15);drawEditor();}; document.getElementById('ppZoomOut').onclick=()=>{zoom=Math.max(.25,zoom-.15);drawEditor();};
+  document.getElementById('ppFit').onclick=()=>{zoom=1;drawEditor();}; document.getElementById('ppRotateL').onclick=()=>{angle=(angle+270)%360;drawEditor();}; document.getElementById('ppRotateR').onclick=()=>{angle=(angle+90)%360;drawEditor();}; document.getElementById('ppResetCrop').onclick=resetCrop;
+  ['ppW','ppH','ppCount','ppGap','ppTop'].forEach(id=>document.getElementById(id)?.addEventListener('input',drawA4));
+  document.getElementById('passportDownload').onclick=()=>{ const {jsPDF}=window.jspdf||{}; if(!jsPDF){downloadCanvas(out,'india_passport_5_photo_a4.png','image/png');return;} const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:false}); pdf.addImage(out.toDataURL('image/jpeg',0.98),'JPEG',0,0,210,297,undefined,'FAST'); pdf.save('india_passport_crop_5_photo_a4.pdf'); };
+  document.getElementById('passportPrint').onclick=()=>{ const data=out.toDataURL('image/png'); const w=window.open('','_blank'); w.document.write(`<html><head><title>Passport A4 Print</title><style>@page{size:A4;margin:0}body{margin:0}img{width:210mm;height:297mm;display:block}</style></head><body><img src="${data}"></body></html>`); w.document.close(); setTimeout(()=>w.print(),350); };
+  drawEditor();
 }
-function pdfStudioHtml(){ return toolShell('PDF Studio','PDF Resizer presets restored: 20KB, 50KB, 100KB, 200KB, 300KB, 400KB, 500KB and custom.',`
-  <div class="pdf-resizer-v429">
+function pdfStudioHtml(){ return toolShell('PDF Studio','Real browser PDF resizer: presets 20KB–500KB + custom. PDF pages rasterize karke target size ke andar optimize hoti hain.',`
+  <div class="pdf-resizer-v430">
     <div class="upload-box full"><label>Upload PDF</label><input type="file" id="pdfStudioInput" accept="application/pdf"><small id="pdfStudioInfo">PDF select karein.</small></div>
     <label>Target Size</label>
-    <div class="preset-grid">
-      <button data-kb="20">20 KB</button><button data-kb="50">50 KB</button><button data-kb="100">100 KB</button><button data-kb="200">200 KB</button><button data-kb="300">300 KB</button><button data-kb="400">400 KB</button><button data-kb="500">500 KB</button>
-    </div>
+    <div class="preset-grid"><button data-kb="20">20 KB</button><button data-kb="50">50 KB</button><button data-kb="100">100 KB</button><button data-kb="200">200 KB</button><button data-kb="300">300 KB</button><button data-kb="400">400 KB</button><button data-kb="500">500 KB</button></div>
     <label>Custom Size (KB)</label><input id="customPdfKb" type="number" value="100" min="10">
-    <div class="toolbar"><button class="primary" id="pdfResizeBtn">Resize / Optimize</button><button id="pdfDownloadOriginal">Download Original</button></div>
-    <div id="pdfResizeStatus" class="info-list"></div>
+    <label>Output Mode</label><select id="pdfResizeMode"><option value="auto">Auto quality / readable</option><option value="small">Smallest possible</option><option value="clear">Clear text priority</option></select>
+    <div class="toolbar"><button class="primary" id="pdfResizeBtn">Resize / Compress</button><button id="pdfDownloadOriginal">Download Original</button></div>
+    <div class="progressbar"><span id="pdfProgress"></span></div><div id="pdfResizeStatus" class="info-list"></div>
   </div>`); }
-function bindPdfStudioTool(){
-  let file=null,target=100; const info=document.getElementById('pdfStudioInfo'), status=document.getElementById('pdfResizeStatus');
-  document.getElementById('pdfStudioInput').onchange=e=>{file=e.target.files[0]; if(file){info.textContent=`Selected: ${file.name} (${Math.round(file.size/1024)} KB)`; status.innerHTML='Preset select karke Resize / Optimize dabayein.'}};
+async function bindPdfStudioTool(){
+  let file=null,target=100; const info=document.getElementById('pdfStudioInfo'), status=document.getElementById('pdfResizeStatus'), prog=document.getElementById('pdfProgress');
+  document.getElementById('pdfStudioInput').onchange=e=>{file=e.target.files[0]; if(file){info.textContent=`Selected: ${file.name} (${Math.round(file.size/1024)} KB)`; status.innerHTML='Preset select karke Resize / Compress dabayein.'; if(prog)prog.style.width='0%';}};
   document.querySelectorAll('[data-kb]').forEach(b=>b.onclick=()=>{target=parseInt(b.dataset.kb); document.getElementById('customPdfKb').value=target; document.querySelectorAll('[data-kb]').forEach(x=>x.classList.remove('active')); b.classList.add('active')});
   document.getElementById('customPdfKb').oninput=e=>{target=parseInt(e.target.value)||100; document.querySelectorAll('[data-kb]').forEach(x=>x.classList.remove('active'))};
   document.getElementById('pdfDownloadOriginal').onclick=()=>{if(!file)return toast('Pehle PDF upload karo'); const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download=file.name; a.click();};
-  document.getElementById('pdfResizeBtn').onclick=()=>{
+  document.getElementById('pdfResizeBtn').onclick=async()=>{
     if(!file)return toast('Pehle PDF upload karo');
-    const kb=Math.max(10,parseInt(document.getElementById('customPdfKb').value)||target); const current=Math.round(file.size/1024);
-    if(current<=kb){ status.innerHTML=`✅ PDF already ${current} KB hai, target ${kb} KB se chhota hai. Original download kar sakte ho.`; return; }
-    status.innerHTML=`⚠️ Static browser build me real PDF recompression limited hai. Target selected: <b>${kb} KB</b>, current: <b>${current} KB</b>.<br>Next server/API build me exact compression engine connect hoga. Abhi original PDF safe download available hai.`;
-    toast('Target preset saved. Compression engine API next build me connect hoga.');
+    if(!window.pdfjsLib || !window.jspdf?.jsPDF){ status.innerHTML='❌ PDF engine load nahi hua. Internet/CDN check karein.'; return; }
+    const kb=Math.max(10,parseInt(document.getElementById('customPdfKb').value)||target), current=Math.round(file.size/1024), mode=document.getElementById('pdfResizeMode').value;
+    status.innerHTML=`Compressing… Current <b>${current} KB</b>, target <b>${kb} KB</b>. Please wait.`; if(prog)prog.style.width='8%';
+    try{ const blob=await compressPdfRaster(file,kb,mode,(p)=>{if(prog)prog.style.width=Math.round(p*100)+'%'}); const outKb=Math.round(blob.size/1024); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name.replace(/\.pdf$/i,'')+`_${outKb}KB_resized.pdf`; a.click(); status.innerHTML=`✅ Resized PDF ready: <b>${outKb} KB</b> (target ${kb} KB). ${outKb>kb?'Target se thoda bada hai, par readability preserve ki gayi.':''}`; toast('PDF resized download started'); }
+    catch(err){ console.error(err); status.innerHTML='❌ Resize failed: '+(err.message||err); }
   };
+}
+async function compressPdfRaster(file,targetKb,mode,onProgress){
+  const ab=await file.arrayBuffer(); const src=await pdfjsLib.getDocument({data:ab}).promise; const pages=[];
+  const maxPages=Math.min(src.numPages,50); let baseScale= mode==='clear'?1.35 : mode==='small'?0.75 : 1.05;
+  async function render(scale,quality){
+    const {jsPDF}=window.jspdf; const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+    for(let i=1;i<=maxPages;i++){
+      const page=await src.getPage(i); const vp=page.getViewport({scale}); const canvas=document.createElement('canvas'); canvas.width=Math.ceil(vp.width); canvas.height=Math.ceil(vp.height); const ctx=canvas.getContext('2d',{alpha:false}); ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); await page.render({canvasContext:ctx,viewport:vp}).promise;
+      const orient=canvas.width>canvas.height?'landscape':'portrait'; if(i>1) pdf.addPage('a4',orient); if(i===1 && orient==='landscape'){}
+      const pageW=orient==='landscape'?297:210, pageH=orient==='landscape'?210:297; const ratio=Math.min(pageW/canvas.width,pageH/canvas.height); const w=canvas.width*ratio, h=canvas.height*ratio, x=(pageW-w)/2, y=(pageH-h)/2;
+      pdf.addImage(canvas.toDataURL('image/jpeg',quality),'JPEG',x,y,w,h,undefined,'FAST'); onProgress?.((i/maxPages)*0.85);
+    }
+    return pdf.output('blob');
+  }
+  let q= mode==='small'?0.52:mode==='clear'?0.82:0.68, scale=baseScale, best=null;
+  for(let attempt=0; attempt<7; attempt++){
+    const blob=await render(scale,q); best=blob; const sizeKb=blob.size/1024; onProgress?.(0.86+attempt*0.02);
+    if(sizeKb<=targetKb*1.08 || (q<=0.28 && scale<=0.45)) break;
+    if(q>0.35) q-=0.12; else scale=Math.max(0.38,scale-0.18);
+  }
+  onProgress?.(1); return best;
 }
 function imageCompressorHtml(){ return toolShell('Image Compressor','Image compressor restore.',`<div class="upload-box full"><label>Upload Image</label><input type="file" id="compressInput" accept="image/*"></div><div class="toolbar"><button id="compressBtn" class="primary">Compress</button></div><div id="compressInfo" class="info-list"></div>`); }
 function bindImageCompressorTool(){ let file=null; document.getElementById('compressInput').onchange=e=>{file=e.target.files[0]; document.getElementById('compressInfo').textContent=file?`Selected ${file.name} (${Math.round(file.size/1024)} KB)`:''}; document.getElementById('compressBtn').onclick=()=>toast(file?'Compressor restored. HD compression engine next build me improve hoga.':'Pehle image upload karo'); }

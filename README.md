@@ -1,23 +1,12 @@
-# Smart Photo Toolkit Pro v42.8
+# Smart Photo Toolkit Pro v43.0
 
-This build restores app-wide tools affected by the Document Studio work.
+Real implementation milestone for Passport Photo and PDF Resizer.
 
-## Restored
-- Passport Photo
-- PDF Studio / PDF Resizer area
-- Image Compressor
-- Name / Date Photo
-- Profile Menu + Edit Profile
-- Sign in / Signup / Logout
-- Footer legal/support links
-
-## Document Studio
-v42.7 working foundation retained.
-
-
-## v42.9 Passport + PDF Resizer + Auth Restore
-- India Passport Photo preset: 35 × 45 mm.
-- A4 page output with 5 photos, 2.2 mm photo gap and 2.2 mm top margin.
-- PDF Resizer presets restored: 20, 50, 100, 200, 300, 400, 500 KB + custom.
-- Professional Sign In / Sign Up modal restored with forgot password, show/hide password and profile dropdown flow.
-- Document Studio isolation retained from v42.8.
+## Added
+- Passport Photo crop editor with 8 handles and drag/move crop box.
+- India passport 35 × 45 mm preset.
+- A4 print with 5 photos, 2.2 mm top margin and 2.2 mm gap.
+- High-resolution 300 DPI passport A4 output.
+- Browser PDF Resizer with 20, 50, 100, 200, 300, 400, 500 KB and custom target.
+- PDF resizer rasterizes pages and optimizes quality/scale to reduce file size.
+- Existing Document Studio isolation retained.
